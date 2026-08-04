@@ -19,7 +19,7 @@ interface Settings {
     check_out_end: string;
 }
 
-const props = defineProps<{
+defineProps<{
     settings: Settings;
 }>();
 
@@ -41,10 +41,12 @@ const parseHHmm = (timeStr: string) => {
     };
 };
 
-const inStart = ref(parseHHmm(props.settings.check_in_start));
-const inEnd = ref(parseHHmm(props.settings.check_in_end));
-const outStart = ref(parseHHmm(props.settings.check_out_start));
-const outEnd = ref(parseHHmm(props.settings.check_out_end));
+const page = usePage<{ settings: Settings; flash: { success?: string } }>();
+
+const inStart = ref(parseHHmm(page.props.settings.check_in_start));
+const inEnd = ref(parseHHmm(page.props.settings.check_in_end));
+const outStart = ref(parseHHmm(page.props.settings.check_out_start));
+const outEnd = ref(parseHHmm(page.props.settings.check_out_end));
 
 const form = useForm({
     check_in_start: `${inStart.value.h}:${inStart.value.m}`,
