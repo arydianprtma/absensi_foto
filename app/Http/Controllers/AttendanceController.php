@@ -92,10 +92,11 @@ class AttendanceController extends Controller
 
         $cleanEmbedding = array_values(array_map('floatval', (array) $student->face_embedding));
 
+        // Threshold diset minimal 50% (0.50)
         $verificationResult = $this->insightFaceService->verifyFace(
             $request->image,
             $cleanEmbedding,
-            0.38
+            0.50
         );
 
         if (! ($verificationResult['matched'] ?? false)) {
@@ -103,7 +104,7 @@ class AttendanceController extends Controller
                 'success' => false,
                 'matched' => false,
                 'similarity' => $verificationResult['similarity'] ?? 0,
-                'message' => $verificationResult['message'] ?? 'Verifikasi wajah gagal. Wajah tidak cocok dengan data terdaftar.',
+                'message' => $verificationResult['message'] ?? 'Verifikasi wajah tidak sah. Kemiripan wajah di bawah 50.0%.',
             ], 200);
         }
 
@@ -142,14 +143,15 @@ class AttendanceController extends Controller
             ], 200);
         }
 
-        $result = $this->insightFaceService->identifyFace($request->image, $students, 0.38);
+        // Threshold diset minimal 50% (0.50)
+        $result = $this->insightFaceService->identifyFace($request->image, $students, 0.50);
 
         if (! ($result['matched'] ?? false)) {
             return response()->json([
                 'success' => false,
                 'matched' => false,
                 'similarity' => $result['similarity'] ?? 0,
-                'message' => $result['message'] ?? 'Wajah tidak dikenali atau belum terdaftar dalam sistem.',
+                'message' => $result['message'] ?? 'Verifikasi wajah tidak sah. Kemiripan wajah di bawah 50.0%.',
             ], 200);
         }
 

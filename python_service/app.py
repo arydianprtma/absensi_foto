@@ -108,7 +108,7 @@ def verify_face(payload: dict):
     try:
         base64_img = payload.get("image")
         target_embedding_list = payload.get("target_embedding")
-        threshold = float(payload.get("threshold", 0.38))
+        threshold = float(payload.get("threshold", 0.50)) # Threshold diset minimal 50% (0.50)
 
         if not base64_img or target_embedding_list is None:
             return {"matched": False, "similarity": 0.0, "message": "Data gambar atau embedding referensi tidak lengkap."}
@@ -148,7 +148,7 @@ def verify_face(payload: dict):
             "similarity_percentage": round(max(0.0, sim) * 100, 2),
             "threshold": threshold,
             "bbox": [float(x) for x in primary_face.bbox],
-            "message": "Wajah terverifikasi cocok!" if matched else f"Wajah tidak cocok (kemiripan: {round(max(0.0, sim)*100, 1)}%)"
+            "message": "Wajah terverifikasi cocok!" if matched else f"Wajah tidak cocok / tidak sah (kemiripan: {round(max(0.0, sim)*100, 1)}% dibawah 50.0%)"
         }
     except Exception as e:
         return {"matched": False, "similarity": 0.0, "message": f"Error verifikasi: {str(e)}"}
@@ -158,7 +158,7 @@ def identify_face(payload: dict):
     try:
         base64_img = payload.get("image")
         students_list = payload.get("students", [])
-        threshold = float(payload.get("threshold", 0.38))
+        threshold = float(payload.get("threshold", 0.50)) # Threshold diset minimal 50% (0.50)
 
         if not base64_img:
             return {"matched": False, "similarity": 0.0, "message": "Gambar snapshot kamera tidak ditemukan."}
@@ -231,7 +231,7 @@ def identify_face(payload: dict):
             "similarity": round(max(0.0, best_similarity), 4),
             "similarity_percentage": round(max(0.0, best_similarity) * 100, 2),
             "faces_count": len(faces),
-            "message": f"Wajah tidak cocok dengan data siswa mana pun (Kemiripan tertinggi: {round(max(0.0, best_similarity)*100, 1)}%)"
+            "message": f"Verifikasi tidak sah / tidak cocok (Kemiripan tertinggi: {round(max(0.0, best_similarity)*100, 1)}% - Syarat minimal 50.0%)"
         }
     except Exception as e:
         return {"matched": False, "similarity": 0.0, "message": f"Error ekstraksi AI: {str(e)}"}
