@@ -16,7 +16,8 @@ return new class extends Migration
             $table->foreignId('student_id')->constrained('students')->onDelete('cascade');
             $table->date('date');
             $table->time('check_in_time');
-            $table->enum('status', ['hadir', 'terlambat', 'izin', 'sakit'])->default('hadir');
+            $table->time('check_out_time')->nullable();
+            $table->string('status', 30)->default('hadir');
             $table->string('photo_path')->nullable();
             $table->float('similarity_score')->default(0.0);
             $table->timestamps();
