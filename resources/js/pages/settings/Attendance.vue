@@ -66,8 +66,6 @@ watch(
     { deep: true },
 );
 
-const page = usePage();
-
 const submit = () => {
     form.post('/attendance-settings');
 };
