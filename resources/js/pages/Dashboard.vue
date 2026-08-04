@@ -196,72 +196,74 @@ onUnmounted(() => {
                     </Link>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm border-collapse">
-                        <thead>
-                            <tr class="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">
-                                <th class="py-3.5 px-4 rounded-l-xl">Bukti Foto AI</th>
-                                <th class="py-3.5 px-4">NISN</th>
-                                <th class="py-3.5 px-4">Nama Siswa</th>
-                                <th class="py-3.5 px-4">Kelas</th>
-                                <th class="py-3.5 px-4">Waktu Masuk</th>
-                                <th class="py-3.5 px-4">Akurasi InsightFace</th>
-                                <th class="py-3.5 px-4 rounded-r-xl">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
-                            <tr v-for="log in recentLogs" :key="log.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
-                                <td class="py-3 px-4">
-                                    <div class="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-800 overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm">
-                                        <img v-if="log.photo_url" :src="log.photo_url" alt="Foto Absen" class="w-full h-full object-cover" />
-                                        <div v-else class="w-full h-full flex items-center justify-center text-xs text-slate-400 font-bold">N/A</div>
-                                    </div>
-                                </td>
-                                <td class="py-3 px-4 font-mono font-medium text-slate-900 dark:text-slate-100">{{ log.nisn }}</td>
-                                <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white">{{ log.student_name }}</td>
-                                <td class="py-3 px-4">
-                                    <span class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2.5 py-1 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-700">
-                                        {{ log.class_name }}
-                                    </span>
-                                </td>
-                                <td class="py-3 px-4 font-semibold text-emerald-600 dark:text-emerald-400">{{ log.check_in_time }} WIB</td>
-                                <td class="py-3 px-4">
-                                    <span class="px-2.5 py-1 text-xs font-bold rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20">
-                                        {{ log.similarity_percentage }}% Match
-                                    </span>
-                                </td>
-                                <td class="py-3 px-4">
-                                    <span
-                                        :class="[
-                                            'px-3 py-1 text-xs font-bold rounded-full border shadow-sm',
-                                            log.status === 'hadir'
-                                                ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30'
-                                                : 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30'
-                                        ]"
-                                    >
-                                        {{ log.status }}
-                                    </span>
-                                </td>
-                            </tr>
-
-                            <tr v-if="recentLogs.length === 0">
-                                <td colspan="7" class="text-center py-16 text-slate-400">
-                                    <div class="flex flex-col items-center justify-center space-y-3">
-                                        <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400">
-                                            <ScanFace class="w-6 h-6" />
+                <div class="overflow-hidden border border-slate-200 dark:border-slate-800 rounded-2xl">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm border-separate border-spacing-0">
+                            <thead>
+                                <tr class="bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">
+                                    <th class="py-3.5 px-4 border-b border-slate-200 dark:border-slate-800">Bukti Foto AI</th>
+                                    <th class="py-3.5 px-4 border-b border-slate-200 dark:border-slate-800">NISN</th>
+                                    <th class="py-3.5 px-4 border-b border-slate-200 dark:border-slate-800">Nama Siswa</th>
+                                    <th class="py-3.5 px-4 border-b border-slate-200 dark:border-slate-800">Kelas</th>
+                                    <th class="py-3.5 px-4 border-b border-slate-200 dark:border-slate-800">Waktu Masuk</th>
+                                    <th class="py-3.5 px-4 border-b border-slate-200 dark:border-slate-800">Akurasi InsightFace</th>
+                                    <th class="py-3.5 px-4 border-b border-slate-200 dark:border-slate-800">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                                <tr v-for="log in recentLogs" :key="log.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                                    <td class="py-3 px-4 border-b border-slate-100 dark:border-slate-800/60">
+                                        <div class="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-800 overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm">
+                                            <img v-if="log.photo_url" :src="log.photo_url" alt="Foto Absen" class="w-full h-full object-cover" />
+                                            <div v-else class="w-full h-full flex items-center justify-center text-xs text-slate-400 font-bold">N/A</div>
                                         </div>
-                                        <p class="text-sm font-medium text-slate-600 dark:text-slate-300">Belum ada aktivitas absensi tercatat hari ini.</p>
-                                        <Link
-                                            href="/absensi"
-                                            class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
+                                    </td>
+                                    <td class="py-3 px-4 font-mono font-medium text-slate-900 dark:text-slate-100 border-b border-slate-100 dark:border-slate-800/60">{{ log.nisn }}</td>
+                                    <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800/60">{{ log.student_name }}</td>
+                                    <td class="py-3 px-4 border-b border-slate-100 dark:border-slate-800/60">
+                                        <span class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2.5 py-1 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-700">
+                                            {{ log.class_name }}
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-4 font-semibold text-emerald-600 dark:text-emerald-400 border-b border-slate-100 dark:border-slate-800/60">{{ log.check_in_time }} WIB</td>
+                                    <td class="py-3 px-4 border-b border-slate-100 dark:border-slate-800/60">
+                                        <span class="px-2.5 py-1 text-xs font-bold rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20">
+                                            {{ log.similarity_percentage }}% Match
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-4 border-b border-slate-100 dark:border-slate-800/60">
+                                        <span
+                                            :class="[
+                                                'px-3 py-1 text-xs font-bold rounded-full border shadow-sm',
+                                                log.status === 'hadir'
+                                                    ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30'
+                                                    : 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30'
+                                            ]"
                                         >
-                                            Mulai Kamera Absensi &rarr;
-                                        </Link>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                                            {{ log.status }}
+                                        </span>
+                                    </td>
+                                </tr>
+
+                                <tr v-if="recentLogs.length === 0">
+                                    <td colspan="7" class="text-center py-16 text-slate-400">
+                                        <div class="flex flex-col items-center justify-center space-y-3">
+                                            <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400">
+                                                <ScanFace class="w-6 h-6" />
+                                            </div>
+                                            <p class="text-sm font-medium text-slate-600 dark:text-slate-300">Belum ada aktivitas absensi tercatat hari ini.</p>
+                                            <Link
+                                                href="/absensi"
+                                                class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
+                                            >
+                                                Mulai Kamera Absensi &rarr;
+                                            </Link>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>

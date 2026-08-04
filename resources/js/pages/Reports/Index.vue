@@ -124,42 +124,44 @@ const printReport = () => {
             <!-- Table Section -->
             <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm border-collapse">
+                    <table class="w-full text-left text-sm border-separate border-spacing-0">
                         <thead>
-                            <tr class="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-slate-400 text-xs font-semibold uppercase tracking-wider">
-                                <th class="py-3 px-4">Foto Absen</th>
-                                <th class="py-3 px-4">Tanggal</th>
-                                <th class="py-3 px-4">NISN</th>
-                                <th class="py-3 px-4">Nama Siswa</th>
-                                <th class="py-3 px-4">Kelas</th>
-                                <th class="py-3 px-4">Jam Masuk</th>
-                                <th class="py-3 px-4">Kemiripan Wajah</th>
-                                <th class="py-3 px-4">Status</th>
+                            <tr class="bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                                <th class="py-3 px-4 border-b border-slate-200 dark:border-slate-800">Foto Absen</th>
+                                <th class="py-3 px-4 border-b border-slate-200 dark:border-slate-800">Tanggal</th>
+                                <th class="py-3 px-4 border-b border-slate-200 dark:border-slate-800">NISN</th>
+                                <th class="py-3 px-4 border-b border-slate-200 dark:border-slate-800">Nama Siswa</th>
+                                <th class="py-3 px-4 border-b border-slate-200 dark:border-slate-800">Kelas</th>
+                                <th class="py-3 px-4 border-b border-slate-200 dark:border-slate-800">Jam Masuk</th>
+                                <th class="py-3 px-4 border-b border-slate-200 dark:border-slate-800">Kemiripan Wajah</th>
+                                <th class="py-3 px-4 border-b border-slate-200 dark:border-slate-800">Status</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
                             <tr v-for="item in reports" :key="item.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
-                                <td class="py-2.5 px-4">
-                                    <div class="w-10 h-10 rounded-xl bg-slate-800 overflow-hidden border border-slate-700">
+                                <td class="py-2.5 px-4 border-b border-slate-100 dark:border-slate-800/60">
+                                    <div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm">
                                         <img v-if="item.photo_url" :src="item.photo_url" alt="Foto Absen" class="w-full h-full object-cover" />
-                                        <div v-else class="w-full h-full flex items-center justify-center text-xs text-slate-500 font-bold">N/A</div>
+                                        <div v-else class="w-full h-full flex items-center justify-center text-xs text-slate-400 font-bold">N/A</div>
                                     </div>
                                 </td>
-                                <td class="py-2.5 px-4 font-mono text-xs">{{ item.date }}</td>
-                                <td class="py-2.5 px-4 font-mono font-medium text-slate-900 dark:text-slate-100">{{ item.nisn }}</td>
-                                <td class="py-2.5 px-4 font-semibold text-slate-900 dark:text-slate-100">{{ item.student_name }}</td>
-                                <td class="py-2.5 px-4">{{ item.class_name }}</td>
-                                <td class="py-2.5 px-4 font-semibold text-emerald-600 dark:text-emerald-400">{{ item.check_in_time }} WIB</td>
-                                <td class="py-2.5 px-4">
-                                    <span class="px-2 py-0.5 text-xs font-semibold rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                                <td class="py-2.5 px-4 font-mono text-xs border-b border-slate-100 dark:border-slate-800/60">{{ item.date }}</td>
+                                <td class="py-2.5 px-4 font-mono font-medium text-slate-900 dark:text-slate-100 border-b border-slate-100 dark:border-slate-800/60">{{ item.nisn }}</td>
+                                <td class="py-2.5 px-4 font-semibold text-slate-900 dark:text-slate-100 border-b border-slate-100 dark:border-slate-800/60">{{ item.student_name }}</td>
+                                <td class="py-2.5 px-4 border-b border-slate-100 dark:border-slate-800/60">{{ item.class_name }}</td>
+                                <td class="py-2.5 px-4 font-semibold text-emerald-600 dark:text-emerald-400 border-b border-slate-100 dark:border-slate-800/60">{{ item.check_in_time }} WIB</td>
+                                <td class="py-2.5 px-4 border-b border-slate-100 dark:border-slate-800/60">
+                                    <span class="px-2 py-0.5 text-xs font-semibold rounded bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20">
                                         {{ item.similarity_percentage }}% Match
                                     </span>
                                 </td>
-                                <td class="py-2.5 px-4">
+                                <td class="py-2.5 px-4 border-b border-slate-100 dark:border-slate-800/60">
                                     <span
                                         :class="[
-                                            'px-2.5 py-1 text-xs font-semibold rounded-full border',
-                                            item.status === 'hadir' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                                            'px-2.5 py-1 text-xs font-semibold rounded-full border shadow-sm',
+                                            item.status === 'hadir'
+                                                ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30'
+                                                : 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30'
                                         ]"
                                     >
                                         {{ item.status }}
