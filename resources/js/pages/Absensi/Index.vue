@@ -1,6 +1,27 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { Camera, CheckCircle2, AlertTriangle, RefreshCw, UserCheck, ShieldAlert, Sparkles, Clock, Calendar, ScanFace, User, LogOut, LogIn, Eye, ArrowLeft, ArrowRight, Smile, ShieldCheck, Volume2, VolumeX } from '@lucide/vue';
+import {
+    Camera,
+    CheckCircle2,
+    AlertTriangle,
+    RefreshCw,
+    UserCheck,
+    ShieldAlert,
+    Sparkles,
+    Clock,
+    Calendar,
+    ScanFace,
+    User,
+    LogOut,
+    LogIn,
+    Eye,
+    ArrowLeft,
+    ArrowRight,
+    Smile,
+    ShieldCheck,
+    Volume2,
+    VolumeX,
+} from '@lucide/vue';
 import { ref, onMounted, onUnmounted } from 'vue';
 
 interface Student {
@@ -37,7 +58,7 @@ interface Challenge {
     icon: any;
 }
 
-const props = defineProps<{
+defineProps<{
     students: Student[];
     todayLogs: LogItem[];
     settings?: Settings;
@@ -65,10 +86,30 @@ let challengeTimer: number | null = null;
 let currentAudio: HTMLAudioElement | null = null;
 
 const challengesList: Challenge[] = [
-    { id: 'blink', label: 'Kedipkan Mata Anda', instruction: 'Kedipkan mata Anda 1-2 kali sekarang ke kamera', icon: Eye },
-    { id: 'turn_left', label: 'Tengok ke KIRI', instruction: 'Miringkan / Tengokkan kepala Anda ke KIRI', icon: ArrowLeft },
-    { id: 'turn_right', label: 'Tengok ke KANAN', instruction: 'Miringkan / Tengokkan kepala Anda ke KANAN', icon: ArrowRight },
-    { id: 'smile', label: 'Tersenyum ke Kamera', instruction: 'Tersenyum manis ke arah kamera sekarang', icon: Smile },
+    {
+        id: 'blink',
+        label: 'Kedipkan Mata Anda',
+        instruction: 'Kedipkan mata Anda 1-2 kali sekarang ke kamera',
+        icon: Eye,
+    },
+    {
+        id: 'turn_left',
+        label: 'Tengok ke KIRI',
+        instruction: 'Miringkan / Tengokkan kepala Anda ke KIRI',
+        icon: ArrowLeft,
+    },
+    {
+        id: 'turn_right',
+        label: 'Tengok ke KANAN',
+        instruction: 'Miringkan / Tengokkan kepala Anda ke KANAN',
+        icon: ArrowRight,
+    },
+    {
+        id: 'smile',
+        label: 'Tersenyum ke Kamera',
+        instruction: 'Tersenyum manis ke arah kamera sekarang',
+        icon: Smile,
+    },
 ];
 
 const resultModal = ref<{
@@ -96,7 +137,9 @@ const resultModal = ref<{
 
 // High Definition Neural Text-to-Speech Engine
 const speakGreeting = (text: string) => {
-    if (!voiceGreetingEnabled.value) return;
+    if (!voiceGreetingEnabled.value) {
+        return;
+    }
 
     try {
         if (currentAudio) {
@@ -107,11 +150,11 @@ const speakGreeting = (text: string) => {
         // Use Google Neural Indonesian Voice API
         const encodedText = encodeURIComponent(text);
         const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodedText}&tl=id&client=tw-ob`;
-        
+
         const audio = new Audio(audioUrl);
         currentAudio = audio;
         audio.volume = 1.0;
-        
+
         audio.play().catch(() => {
             // Fallback to Web Speech API if audio play policy blocked
             if ('speechSynthesis' in window) {
@@ -130,7 +173,10 @@ const speakGreeting = (text: string) => {
 // Sound feedback synthesizer using Web Audio API
 const playSound = (type: 'success' | 'error' | 'warning') => {
     try {
-        const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        const AudioCtx =
+            window.AudioContext ||
+            (window as unknown as { webkitAudioContext: typeof AudioContext })
+                .webkitAudioContext;
         const ctx = new AudioCtx();
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -140,7 +186,10 @@ const playSound = (type: 'success' | 'error' | 'warning') => {
         if (type === 'success') {
             osc.type = 'sine';
             osc.frequency.setValueAtTime(523.25, ctx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.3);
+            osc.frequency.exponentialRampToValueAtTime(
+                880,
+                ctx.currentTime + 0.3,
+            );
             gain.gain.setValueAtTime(0.3, ctx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
             osc.start();
@@ -169,19 +218,27 @@ const playSound = (type: 'success' | 'error' | 'warning') => {
 
 const startCamera = async () => {
     cameraError.value = null;
+
     try {
         const stream = await navigator.mediaDevices.getUserMedia({
-            video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+            video: {
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+                facingMode: 'user',
+            },
         });
         mediaStream.value = stream;
+
         if (videoRef.value) {
             videoRef.value.srcObject = stream;
             videoRef.value.play();
         }
+
         isCameraActive.value = true;
         startAutoScanLoop();
     } catch (err) {
-        cameraError.value = 'Tidak dapat mengakses kamera web. Pastikan izin kamera telah diberikan di browser Anda.';
+        cameraError.value =
+            'Tidak dapat mengakses kamera web. Pastikan izin kamera telah diberikan di browser Anda.';
         console.error('Webcam access error:', err);
     }
 };
@@ -191,20 +248,29 @@ const stopCamera = () => {
         mediaStream.value.getTracks().forEach((track) => track.stop());
         mediaStream.value = null;
     }
+
     isCameraActive.value = false;
     stopAutoScanLoop();
 };
 
 const captureSnapshot = (): string | null => {
-    if (!videoRef.value || !canvasRef.value) return null;
+    if (!videoRef.value || !canvasRef.value) {
+        return null;
+    }
+
     const video = videoRef.value;
     const canvas = canvasRef.value;
     canvas.width = video.videoWidth || 640;
     canvas.height = video.videoHeight || 480;
 
     const ctx = canvas.getContext('2d');
-    if (!ctx) return null;
+
+    if (!ctx) {
+        return null;
+    }
+
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
     return canvas.toDataURL('image/jpeg', 0.9);
 };
 
@@ -212,6 +278,7 @@ const triggerLivenessChallenge = (): Promise<boolean> => {
     return new Promise((resolve) => {
         if (!livenessProtectionEnabled.value) {
             resolve(true);
+
             return;
         }
 
@@ -223,12 +290,20 @@ const triggerLivenessChallenge = (): Promise<boolean> => {
         scanStatusText.value = `TANTANGAN AI: ${currentChallenge.value.label}!`;
 
         let secondsLeft = 2;
-        if (challengeTimer) clearInterval(challengeTimer);
+
+        if (challengeTimer) {
+            clearInterval(challengeTimer);
+        }
+
         challengeTimer = window.setInterval(() => {
             secondsLeft--;
             challengeCountdown.value = secondsLeft;
+
             if (secondsLeft <= 0) {
-                if (challengeTimer) clearInterval(challengeTimer);
+                if (challengeTimer) {
+                    clearInterval(challengeTimer);
+                }
+
                 isChallengeActive.value = false;
                 resolve(true);
             }
@@ -237,14 +312,23 @@ const triggerLivenessChallenge = (): Promise<boolean> => {
 };
 
 const handleAutoVerify = async (isManualClick = false) => {
-    if (isVerifying.value || resultModal.value.show || isChallengeActive.value) return;
+    if (
+        isVerifying.value ||
+        resultModal.value.show ||
+        isChallengeActive.value
+    ) {
+        return;
+    }
 
     if (livenessProtectionEnabled.value && !isChallengeActive.value) {
         await triggerLivenessChallenge();
     }
 
     const imageBase64 = captureSnapshot();
-    if (!imageBase64) return;
+
+    if (!imageBase64) {
+        return;
+    }
 
     isVerifying.value = true;
     scanStatusText.value = 'Menganalisis Wajah & Anti-Spoofing...';
@@ -254,7 +338,12 @@ const handleAutoVerify = async (isManualClick = false) => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
+                'X-CSRF-TOKEN':
+                    (
+                        document.querySelector(
+                            'meta[name="csrf-token"]',
+                        ) as HTMLMetaElement
+                    )?.content || '',
             },
             body: JSON.stringify({
                 image: imageBase64,
@@ -266,36 +355,46 @@ const handleAutoVerify = async (isManualClick = false) => {
         // Anti-Spoofing Fraud Detection (Layar HP / Video)
         if (data.is_spoof) {
             playSound('error');
-            speakGreeting('Kecurangan terdeteksi. Gunakan wajah asli kamu di depan kamera.');
+            speakGreeting(
+                'Kecurangan terdeteksi. Gunakan wajah asli kamu di depan kamera.',
+            );
             scanStatusText.value = 'KECURANGAN DETEKSI!';
             resultModal.value = {
                 show: true,
                 success: false,
                 is_spoof: true,
                 title: 'Deteksi Kecurangan (Spoofing)',
-                message: data.message || 'Terdeteksi foto/layar HP. Harap hadirkan wajah asli di depan kamera!',
+                message:
+                    data.message ||
+                    'Terdeteksi foto/layar HP. Harap hadirkan wajah asli di depan kamera!',
             };
+
             return;
         }
 
         // SILENT RETURN if NO FACE IS DETECTED during auto loop
         if (data.faces_count === 0 && !isManualClick) {
             scanStatusText.value = 'Menunggu Wajah di Depan Kamera...';
+
             return;
         }
 
         if (response.ok && data.success) {
             playSound('success');
-            const greetingMsg = data.attendance.type === 'pulang'
-                ? `Halo ${data.student.name}, absen pulang kamu berhasil.`
-                : `Halo ${data.student.name}, absen masuk kamu berhasil.`;
+            const greetingMsg =
+                data.attendance.type === 'pulang'
+                    ? `Halo ${data.student.name}, absen pulang kamu berhasil.`
+                    : `Halo ${data.student.name}, absen masuk kamu berhasil.`;
             speakGreeting(greetingMsg);
 
             scanStatusText.value = `Berhasil! Wajah Terverifikasi (${data.student.name})`;
             resultModal.value = {
                 show: true,
                 success: true,
-                title: data.attendance.type === 'pulang' ? 'Absensi Pulang Berhasil!' : 'Absensi Masuk Berhasil!',
+                title:
+                    data.attendance.type === 'pulang'
+                        ? 'Absensi Pulang Berhasil!'
+                        : 'Absensi Masuk Berhasil!',
                 message: data.message,
                 studentName: data.student.name,
                 nisn: data.student.nisn,
@@ -334,8 +433,12 @@ const handleAutoVerify = async (isManualClick = false) => {
                     show: true,
                     success: false,
                     title: 'Wajah Tidak Dikenali / Tidak Sah',
-                    message: data.message || 'Wajah tidak cocok (kemiripan di bawah 50.0%).',
-                    similarity: data.similarity ? Math.round(data.similarity * 100) : 0,
+                    message:
+                        data.message ||
+                        'Wajah tidak cocok (kemiripan di bawah 50.0%).',
+                    similarity: data.similarity
+                        ? Math.round(data.similarity * 100)
+                        : 0,
                 };
             }
         }
@@ -350,9 +453,11 @@ const handleAutoVerify = async (isManualClick = false) => {
                 message: 'Terjadi kesalahan koneksi saat memverifikasi wajah.',
             };
         }
+
         console.error('Auto verification request error:', err);
     } finally {
         isVerifying.value = false;
+
         if (!resultModal.value.show) {
             scanStatusText.value = 'Menunggu Wajah di Depan Kamera...';
         }
@@ -362,6 +467,7 @@ const handleAutoVerify = async (isManualClick = false) => {
 const handleManualVerify = async () => {
     if (!selectedStudentId.value) {
         alert('Pilih siswa terlebih dahulu!');
+
         return;
     }
 
@@ -370,8 +476,10 @@ const handleManualVerify = async () => {
     }
 
     const imageBase64 = captureSnapshot();
+
     if (!imageBase64) {
         alert('Kamera belum siap!');
+
         return;
     }
 
@@ -382,7 +490,12 @@ const handleManualVerify = async () => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
+                'X-CSRF-TOKEN':
+                    (
+                        document.querySelector(
+                            'meta[name="csrf-token"]',
+                        ) as HTMLMetaElement
+                    )?.content || '',
             },
             body: JSON.stringify({
                 student_id: selectedStudentId.value,
@@ -394,28 +507,37 @@ const handleManualVerify = async () => {
 
         if (data.is_spoof) {
             playSound('error');
-            speakGreeting('Kecurangan terdeteksi. Gunakan wajah asli kamu di depan kamera.');
+            speakGreeting(
+                'Kecurangan terdeteksi. Gunakan wajah asli kamu di depan kamera.',
+            );
             resultModal.value = {
                 show: true,
                 success: false,
                 is_spoof: true,
                 title: 'Deteksi Kecurangan (Spoofing)',
-                message: data.message || 'Terdeteksi foto/layar HP. Harap hadirkan wajah asli!',
+                message:
+                    data.message ||
+                    'Terdeteksi foto/layar HP. Harap hadirkan wajah asli!',
             };
+
             return;
         }
 
         if (response.ok && data.success) {
             playSound('success');
-            const greetingMsg = data.attendance.type === 'pulang'
-                ? `Halo ${data.student.name}, absen pulang kamu berhasil.`
-                : `Halo ${data.student.name}, absen masuk kamu berhasil.`;
+            const greetingMsg =
+                data.attendance.type === 'pulang'
+                    ? `Halo ${data.student.name}, absen pulang kamu berhasil.`
+                    : `Halo ${data.student.name}, absen masuk kamu berhasil.`;
             speakGreeting(greetingMsg);
 
             resultModal.value = {
                 show: true,
                 success: true,
-                title: data.attendance.type === 'pulang' ? 'Absensi Pulang Berhasil!' : 'Absensi Masuk Berhasil!',
+                title:
+                    data.attendance.type === 'pulang'
+                        ? 'Absensi Pulang Berhasil!'
+                        : 'Absensi Masuk Berhasil!',
                 message: data.message,
                 studentName: data.student.name,
                 nisn: data.student.nisn,
@@ -451,8 +573,12 @@ const handleManualVerify = async () => {
                 show: true,
                 success: false,
                 title: 'Verifikasi Wajah Gagal',
-                message: data.message || 'Wajah tidak cocok (kemiripan di bawah 50.0%).',
-                similarity: data.similarity ? Math.round(data.similarity * 100) : 0,
+                message:
+                    data.message ||
+                    'Wajah tidak cocok (kemiripan di bawah 50.0%).',
+                similarity: data.similarity
+                    ? Math.round(data.similarity * 100)
+                    : 0,
             };
         }
     } catch (err) {
@@ -474,7 +600,13 @@ const startAutoScanLoop = () => {
     stopAutoScanLoop();
     autoScanEnabled.value = true;
     autoScanInterval = window.setInterval(() => {
-        if (scanMode.value === 'auto' && autoScanEnabled.value && !isVerifying.value && !resultModal.value.show && !isChallengeActive.value) {
+        if (
+            scanMode.value === 'auto' &&
+            autoScanEnabled.value &&
+            !isVerifying.value &&
+            !resultModal.value.show &&
+            !isChallengeActive.value
+        ) {
             handleAutoVerify(false);
         }
     }, 4500);
@@ -485,6 +617,7 @@ const stopAutoScanLoop = () => {
         clearInterval(autoScanInterval);
         autoScanInterval = null;
     }
+
     autoScanEnabled.value = false;
 };
 
@@ -498,6 +631,7 @@ const toggleAutoScan = () => {
 
 const toggleVoiceGreeting = () => {
     voiceGreetingEnabled.value = !voiceGreetingEnabled.value;
+
     if (voiceGreetingEnabled.value) {
         speakGreeting('Suara AI jernih diaktifkan');
     }
@@ -514,36 +648,58 @@ onMounted(() => {
 
 onUnmounted(() => {
     stopCamera();
-    if (challengeTimer) clearInterval(challengeTimer);
+
+    if (challengeTimer) {
+        clearInterval(challengeTimer);
+    }
 });
 </script>
 
 <template>
     <Head title="Absensi Verifikasi Wajah AI Otomatis & Anti-Spoofing" />
 
-    <div class="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <div
+        class="flex min-h-screen flex-col bg-slate-950 font-sans text-slate-100"
+    >
         <!-- Top Navigation Header -->
-        <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur px-6 py-4 flex items-center justify-between sticky top-0 z-30">
+        <header
+            class="sticky top-0 z-30 flex items-center justify-between border-b border-slate-800 bg-slate-900/80 px-6 py-4 backdrop-blur"
+        >
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-emerald-400 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                    <ScanFace class="w-6 h-6 text-white" />
+                <div
+                    class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-500 to-emerald-400 shadow-lg shadow-indigo-500/20"
+                >
+                    <ScanFace class="h-6 w-6 text-white" />
                 </div>
                 <div>
-                    <h1 class="font-bold text-lg leading-tight tracking-wide bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+                    <h1
+                        class="bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-lg leading-tight font-bold tracking-wide text-transparent"
+                    >
                         Absensi Pengenalan Wajah Otomatis
                     </h1>
-                    <p class="text-xs text-slate-400">InsightFace Smart Engine + Anti-Video Replay</p>
+                    <p class="text-xs text-slate-400">
+                        InsightFace Smart Engine + Anti-Video Replay
+                    </p>
                 </div>
             </div>
 
             <!-- Attendance Time Schedule Pill -->
-            <div v-if="settings" class="hidden md:flex items-center gap-4 bg-slate-950/80 px-4 py-2 rounded-2xl border border-slate-800 text-xs">
-                <div class="flex items-center gap-1.5 text-emerald-400 font-semibold">
-                    <LogIn class="w-4 h-4" /> Masuk: {{ settings.check_in_start }} - {{ settings.check_in_end }}
+            <div
+                v-if="settings"
+                class="hidden items-center gap-4 rounded-2xl border border-slate-800 bg-slate-950/80 px-4 py-2 text-xs md:flex"
+            >
+                <div
+                    class="flex items-center gap-1.5 font-semibold text-emerald-400"
+                >
+                    <LogIn class="h-4 w-4" /> Masuk:
+                    {{ settings.check_in_start }} - {{ settings.check_in_end }}
                 </div>
                 <span class="text-slate-700">|</span>
-                <div class="flex items-center gap-1.5 text-indigo-400 font-semibold">
-                    <LogOut class="w-4 h-4" /> Pulang: Mulai {{ settings.check_out_start }}
+                <div
+                    class="flex items-center gap-1.5 font-semibold text-indigo-400"
+                >
+                    <LogOut class="h-4 w-4" /> Pulang: Mulai
+                    {{ settings.check_out_start }}
                 </div>
             </div>
 
@@ -552,83 +708,131 @@ onUnmounted(() => {
                 <button
                     @click="toggleVoiceGreeting"
                     :class="[
-                        'p-2.5 rounded-xl border text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer',
+                        'flex cursor-pointer items-center gap-1.5 rounded-xl border p-2.5 text-xs font-semibold transition',
                         voiceGreetingEnabled
-                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                            : 'bg-slate-800 text-slate-400 border-slate-700'
+                            ? 'border-emerald-500/30 bg-emerald-500/20 text-emerald-400'
+                            : 'border-slate-700 bg-slate-800 text-slate-400',
                     ]"
-                    :title="voiceGreetingEnabled ? 'Matikan Suara AI' : 'Aktifkan Suara AI'"
+                    :title="
+                        voiceGreetingEnabled
+                            ? 'Matikan Suara AI'
+                            : 'Aktifkan Suara AI'
+                    "
                 >
-                    <Volume2 v-if="voiceGreetingEnabled" class="w-4 h-4" />
-                    <VolumeX v-else class="w-4 h-4" />
-                    <span class="hidden sm:inline">{{ voiceGreetingEnabled ? 'Suara HD On' : 'Suara HD Off' }}</span>
+                    <Volume2 v-if="voiceGreetingEnabled" class="h-4 w-4" />
+                    <VolumeX v-else class="h-4 w-4" />
+                    <span class="hidden sm:inline">{{
+                        voiceGreetingEnabled ? 'Suara HD On' : 'Suara HD Off'
+                    }}</span>
                 </button>
 
                 <!-- Mode Switcher -->
-                <div class="bg-slate-950 p-1 rounded-xl border border-slate-800 flex text-xs font-semibold">
+                <div
+                    class="flex rounded-xl border border-slate-800 bg-slate-950 p-1 text-xs font-semibold"
+                >
                     <button
-                        @click="scanMode = 'auto'; startAutoScanLoop();"
+                        @click="
+                            scanMode = 'auto';
+                            startAutoScanLoop();
+                        "
                         :class="[
-                            'px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 cursor-pointer',
-                            scanMode === 'auto' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+                            'flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 transition',
+                            scanMode === 'auto'
+                                ? 'bg-indigo-600 text-white shadow'
+                                : 'text-slate-400 hover:text-slate-200',
                         ]"
                     >
-                        <Sparkles class="w-3.5 h-3.5" /> Deteksi Otomatis
+                        <Sparkles class="h-3.5 w-3.5" /> Deteksi Otomatis
                     </button>
                     <button
-                        @click="scanMode = 'manual'; stopAutoScanLoop();"
+                        @click="
+                            scanMode = 'manual';
+                            stopAutoScanLoop();
+                        "
                         :class="[
-                            'px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 cursor-pointer',
-                            scanMode === 'manual' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+                            'flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 transition',
+                            scanMode === 'manual'
+                                ? 'bg-indigo-600 text-white shadow'
+                                : 'text-slate-400 hover:text-slate-200',
                         ]"
                     >
-                        <User class="w-3.5 h-3.5" /> Pilih Nama Manual
+                        <User class="h-3.5 w-3.5" /> Pilih Nama Manual
                     </button>
                 </div>
 
                 <Link
                     href="/dashboard"
-                    class="px-4 py-2 text-xs font-semibold rounded-lg border border-slate-700 bg-slate-800/80 hover:bg-slate-700 transition flex items-center gap-2"
+                    class="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800/80 px-4 py-2 text-xs font-semibold transition hover:bg-slate-700"
                 >
-                    <UserCheck class="w-4 h-4 text-emerald-400" />
+                    <UserCheck class="h-4 w-4 text-emerald-400" />
                     Dashboard Admin
                 </Link>
             </div>
         </header>
 
         <!-- Main Body -->
-        <main class="flex-1 p-6 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <main
+            class="mx-auto grid w-full max-w-7xl flex-1 grid-cols-1 gap-8 p-6 lg:grid-cols-3"
+        >
             <!-- Left Side: WebCam Face Scan Area -->
-            <div class="lg:col-span-2 flex flex-col gap-6">
+            <div class="flex flex-col gap-6 lg:col-span-2">
                 <!-- Video Container -->
-                <div class="relative bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col items-center justify-center min-h-[420px]">
+                <div
+                    class="relative flex min-h-[420px] flex-col items-center justify-center overflow-hidden rounded-3xl border border-slate-800 bg-slate-900 shadow-2xl"
+                >
                     <video
                         ref="videoRef"
                         autoplay
                         playsinline
                         muted
-                        class="w-full h-full object-cover transform -scale-x-100"
+                        class="h-full w-full -scale-x-100 transform object-cover"
                     ></video>
                     <canvas ref="canvasRef" class="hidden"></canvas>
 
                     <!-- Active Liveness Interactive Challenge Overlay Box -->
-                    <div v-if="isChallengeActive && currentChallenge" class="absolute inset-0 bg-slate-950/85 backdrop-blur-md z-20 flex flex-col items-center justify-center p-6 text-center animate-in fade-in zoom-in-95 duration-200">
-                        <div class="w-20 h-20 rounded-3xl bg-indigo-600/30 border-2 border-indigo-400 text-indigo-300 flex items-center justify-center mb-4 shadow-xl animate-bounce">
-                            <component :is="currentChallenge.icon" class="w-10 h-10" />
+                    <div
+                        v-if="isChallengeActive && currentChallenge"
+                        class="absolute inset-0 z-20 flex animate-in flex-col items-center justify-center bg-slate-950/85 p-6 text-center backdrop-blur-md duration-200 zoom-in-95 fade-in"
+                    >
+                        <div
+                            class="mb-4 flex h-20 w-20 animate-bounce items-center justify-center rounded-3xl border-2 border-indigo-400 bg-indigo-600/30 text-indigo-300 shadow-xl"
+                        >
+                            <component
+                                :is="currentChallenge.icon"
+                                class="h-10 w-10"
+                            />
                         </div>
-                        <span class="text-xs font-extrabold uppercase tracking-widest text-indigo-400 mb-1">
-                            TANTANGAN LIVENESS AI (LAKUKAN DALAM {{ challengeCountdown }}S)
+                        <span
+                            class="mb-1 text-xs font-extrabold tracking-widest text-indigo-400 uppercase"
+                        >
+                            TANTANGAN LIVENESS AI (LAKUKAN DALAM
+                            {{ challengeCountdown }}S)
                         </span>
-                        <h2 class="text-2xl font-extrabold text-white mb-2">{{ currentChallenge.label }}</h2>
-                        <p class="text-sm text-slate-300 max-w-sm">{{ currentChallenge.instruction }}</p>
+                        <h2 class="mb-2 text-2xl font-extrabold text-white">
+                            {{ currentChallenge.label }}
+                        </h2>
+                        <p class="max-w-sm text-sm text-slate-300">
+                            {{ currentChallenge.instruction }}
+                        </p>
                     </div>
 
                     <!-- Camera Overlay Box -->
-                    <div v-else class="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
-                        <div class="w-64 h-80 border-2 border-dashed border-emerald-400/80 rounded-3xl relative flex items-center justify-center">
-                            <div class="w-full h-0.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent absolute top-1/2 -translate-y-1/2 animate-bounce"></div>
-                            <span class="absolute -top-7 text-xs font-medium text-emerald-400 bg-slate-950/80 px-3.5 py-1 rounded-full border border-emerald-500/30 flex items-center gap-1.5">
-                                <Sparkles class="w-3.5 h-3.5 text-emerald-400" />
+                    <div
+                        v-else
+                        class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center"
+                    >
+                        <div
+                            class="relative flex h-80 w-64 items-center justify-center rounded-3xl border-2 border-dashed border-emerald-400/80"
+                        >
+                            <div
+                                class="absolute top-1/2 h-0.5 w-full -translate-y-1/2 animate-bounce bg-gradient-to-r from-transparent via-emerald-400 to-transparent"
+                            ></div>
+                            <span
+                                class="absolute -top-7 flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-slate-950/80 px-3.5 py-1 text-xs font-medium text-emerald-400"
+                            >
+                                <Sparkles
+                                    class="h-3.5 w-3.5 text-emerald-400"
+                                />
                                 {{ scanStatusText }}
                             </span>
                         </div>
@@ -636,158 +840,240 @@ onUnmounted(() => {
 
                     <!-- Live Indicator Badge & Liveness Shield -->
                     <div class="absolute top-4 left-4 flex items-center gap-3">
-                        <div class="flex items-center gap-2 bg-slate-950/70 border border-slate-800 px-3 py-1.5 rounded-full backdrop-blur">
-                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
-                            <span class="text-xs font-medium text-emerald-400">Kamera Real-time</span>
+                        <div
+                            class="flex items-center gap-2 rounded-full border border-slate-800 bg-slate-950/70 px-3 py-1.5 backdrop-blur"
+                        >
+                            <span
+                                class="h-2.5 w-2.5 animate-ping rounded-full bg-emerald-500"
+                            ></span>
+                            <span class="text-xs font-medium text-emerald-400"
+                                >Kamera Real-time</span
+                            >
                         </div>
 
-                        <div class="flex items-center gap-1.5 bg-indigo-500/20 border border-indigo-500/30 px-3 py-1.5 rounded-full backdrop-blur text-xs font-semibold text-indigo-300">
-                            <ShieldCheck class="w-3.5 h-3.5 text-indigo-400" />
+                        <div
+                            class="flex items-center gap-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/20 px-3 py-1.5 text-xs font-semibold text-indigo-300 backdrop-blur"
+                        >
+                            <ShieldCheck class="h-3.5 w-3.5 text-indigo-400" />
                             Anti-Spoofing Active
                         </div>
                     </div>
 
                     <!-- Camera Error Notice -->
-                    <div v-if="cameraError" class="absolute inset-0 bg-slate-950/90 flex flex-col items-center justify-center p-6 text-center">
-                        <ShieldAlert class="w-12 h-12 text-rose-500 mb-3" />
-                        <p class="text-sm font-semibold text-rose-300 max-w-md">{{ cameraError }}</p>
+                    <div
+                        v-if="cameraError"
+                        class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/90 p-6 text-center"
+                    >
+                        <ShieldAlert class="mb-3 h-12 w-12 text-rose-500" />
+                        <p class="max-w-md text-sm font-semibold text-rose-300">
+                            {{ cameraError }}
+                        </p>
                         <button
                             @click="startCamera"
-                            class="mt-4 px-4 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 rounded-xl flex items-center gap-2"
+                            class="mt-4 flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold hover:bg-indigo-500"
                         >
-                            <RefreshCw class="w-4 h-4" /> Coba Lagi
+                            <RefreshCw class="h-4 w-4" /> Coba Lagi
                         </button>
                     </div>
                 </div>
 
                 <!-- Verification Action Bar -->
-                <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl backdrop-blur flex flex-col md:flex-row items-center justify-between gap-4">
+                <div
+                    class="flex flex-col items-center justify-between gap-4 rounded-3xl border border-slate-800 bg-slate-900/90 p-6 shadow-xl backdrop-blur md:flex-row"
+                >
                     <!-- MODE AUTOMATIC -->
                     <template v-if="scanMode === 'auto'">
                         <div class="flex-1">
-                            <h3 class="text-sm font-bold text-slate-100 flex items-center gap-2">
-                                <Sparkles class="w-4 h-4 text-emerald-400" /> Mode Auto-Detect AI + Suara Neural HD
+                            <h3
+                                class="flex items-center gap-2 text-sm font-bold text-slate-100"
+                            >
+                                <Sparkles class="h-4 w-4 text-emerald-400" />
+                                Mode Auto-Detect AI + Suara Neural HD
                             </h3>
                             <p class="text-xs text-slate-400">
-                                Menyapa nama siswa menggunakan Google Neural HD Voice yang sangat jernih dan manusiawi.
+                                Menyapa nama siswa menggunakan Google Neural HD
+                                Voice yang sangat jernih dan manusiawi.
                             </p>
                         </div>
 
-                        <div class="flex items-center gap-3 w-full md:w-auto">
+                        <div class="flex w-full items-center gap-3 md:w-auto">
                             <!-- Toggle Auto Scan Loop -->
                             <button
                                 @click="toggleAutoScan"
                                 :class="[
-                                    'px-4 py-3 rounded-2xl font-semibold text-xs transition flex items-center gap-2 border cursor-pointer',
+                                    'flex cursor-pointer items-center gap-2 rounded-2xl border px-4 py-3 text-xs font-semibold transition',
                                     autoScanEnabled
-                                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                                        : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
+                                        ? 'border-emerald-500/40 bg-emerald-500/20 text-emerald-300'
+                                        : 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700',
                                 ]"
                             >
-                                <RefreshCw :class="['w-4 h-4', autoScanEnabled ? 'animate-spin' : '']" />
-                                <span>{{ autoScanEnabled ? 'Auto-Scan Aktif' : 'Aktifkan Auto-Scan' }}</span>
+                                <RefreshCw
+                                    :class="[
+                                        'h-4 w-4',
+                                        autoScanEnabled ? 'animate-spin' : '',
+                                    ]"
+                                />
+                                <span>{{
+                                    autoScanEnabled
+                                        ? 'Auto-Scan Aktif'
+                                        : 'Aktifkan Auto-Scan'
+                                }}</span>
                             </button>
 
                             <!-- Manual Trigger Button -->
                             <button
                                 @click="handleAutoVerify(true)"
                                 :disabled="isVerifying || isChallengeActive"
-                                class="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 font-bold text-sm text-slate-950 shadow-lg shadow-emerald-500/25 disabled:opacity-50 transition flex items-center justify-center gap-2 cursor-pointer flex-1 md:flex-initial"
+                                class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 px-8 py-3.5 text-sm font-bold text-slate-950 shadow-lg shadow-emerald-500/25 transition hover:from-emerald-400 hover:to-teal-500 disabled:opacity-50 md:flex-initial"
                             >
-                                <ScanFace v-if="!isVerifying" class="w-5 h-5" />
-                                <RefreshCw v-else class="w-5 h-5 animate-spin" />
-                                <span>{{ isVerifying ? 'Mencari Siswa...' : 'Scan Sekarang' }}</span>
+                                <ScanFace v-if="!isVerifying" class="h-5 w-5" />
+                                <RefreshCw
+                                    v-else
+                                    class="h-5 w-5 animate-spin"
+                                />
+                                <span>{{
+                                    isVerifying
+                                        ? 'Mencari Siswa...'
+                                        : 'Scan Sekarang'
+                                }}</span>
                             </button>
                         </div>
                     </template>
 
                     <!-- MODE MANUAL -->
                     <template v-else>
-                        <div class="flex-1 w-full">
-                            <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">
+                        <div class="w-full flex-1">
+                            <label
+                                class="mb-1.5 block text-xs font-semibold tracking-wider text-slate-400 uppercase"
+                            >
                                 Pilih Nama / NISN Siswa
                             </label>
                             <select
                                 v-model="selectedStudentId"
-                                class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm focus:outline-none text-slate-100"
+                                class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-slate-100 focus:outline-none"
                             >
-                                <option value="" disabled>-- Pilih Siswa Untuk Absen --</option>
-                                <option v-for="student in students" :key="student.id" :value="student.id">
-                                    {{ student.nisn }} - {{ student.name }} ({{ student.class_name }})
+                                <option value="" disabled>
+                                    -- Pilih Siswa Untuk Absen --
+                                </option>
+                                <option
+                                    v-for="student in students"
+                                    :key="student.id"
+                                    :value="student.id"
+                                >
+                                    {{ student.nisn }} - {{ student.name }} ({{
+                                        student.class_name
+                                    }})
                                 </option>
                             </select>
                         </div>
 
                         <button
                             @click="handleManualVerify"
-                            :disabled="isVerifying || !selectedStudentId || isChallengeActive"
-                            class="w-full md:w-auto px-8 py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 font-bold text-sm text-slate-950 shadow-lg shadow-emerald-500/25 disabled:opacity-50 transition flex items-center justify-center gap-2 cursor-pointer mt-4 md:mt-6"
+                            :disabled="
+                                isVerifying ||
+                                !selectedStudentId ||
+                                isChallengeActive
+                            "
+                            class="mt-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-8 py-3.5 text-sm font-bold text-slate-950 shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-400 disabled:opacity-50 md:mt-6 md:w-auto"
                         >
-                            <Camera v-if="!isVerifying" class="w-5 h-5" />
-                            <RefreshCw v-else class="w-5 h-5 animate-spin" />
-                            <span>{{ isVerifying ? 'Memproses...' : 'Verifikasi Manual' }}</span>
+                            <Camera v-if="!isVerifying" class="h-5 w-5" />
+                            <RefreshCw v-else class="h-5 w-5 animate-spin" />
+                            <span>{{
+                                isVerifying
+                                    ? 'Memproses...'
+                                    : 'Verifikasi Manual'
+                            }}</span>
                         </button>
                     </template>
                 </div>
             </div>
 
             <!-- Right Side: Today's Attendance Activity Feed -->
-            <div class="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 flex flex-col h-[560px] shadow-xl">
-                <div class="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
+            <div
+                class="flex h-[560px] flex-col rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl"
+            >
+                <div
+                    class="mb-4 flex items-center justify-between border-b border-slate-800 pb-4"
+                >
                     <div class="flex items-center gap-2">
-                        <Clock class="w-5 h-5 text-indigo-400" />
-                        <h2 class="font-bold text-base text-slate-100">Aktivitas Hari Ini</h2>
+                        <Clock class="h-5 w-5 text-indigo-400" />
+                        <h2 class="text-base font-bold text-slate-100">
+                            Aktivitas Hari Ini
+                        </h2>
                     </div>
-                    <span class="text-xs bg-slate-800 px-2.5 py-1 rounded-full text-slate-400">
+                    <span
+                        class="rounded-full bg-slate-800 px-2.5 py-1 text-xs text-slate-400"
+                    >
                         {{ todayLogs.length }} Siswa
                     </span>
                 </div>
 
                 <!-- Log List -->
-                <div class="flex-1 overflow-y-auto space-y-3 pr-1">
+                <div class="flex-1 space-y-3 overflow-y-auto pr-1">
                     <div
                         v-for="log in todayLogs"
                         :key="log.id"
-                        class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3 flex items-center gap-3 hover:border-slate-700 transition"
+                        class="flex items-center gap-3 rounded-2xl border border-slate-800/80 bg-slate-950/60 p-3 transition hover:border-slate-700"
                     >
-                        <div class="w-12 h-12 rounded-xl bg-slate-800 overflow-hidden flex-shrink-0 border border-slate-700">
+                        <div
+                            class="h-12 w-12 flex-shrink-0 overflow-hidden rounded-xl border border-slate-700 bg-slate-800"
+                        >
                             <img
                                 v-if="log.photo_url"
                                 :src="log.photo_url"
                                 alt="Foto Absen"
-                                class="w-full h-full object-cover"
+                                class="h-full w-full object-cover"
                             />
-                            <div v-else class="w-full h-full flex items-center justify-center text-slate-500 text-xs font-bold">
+                            <div
+                                v-else
+                                class="flex h-full w-full items-center justify-center text-xs font-bold text-slate-500"
+                            >
                                 N/A
                             </div>
                         </div>
 
-                        <div class="flex-1 min-w-0">
-                            <p class="text-sm font-semibold text-slate-100 truncate">{{ log.student_name }}</p>
-                            <p class="text-xs text-slate-400 truncate">{{ log.nisn }} • {{ log.class_name }}</p>
-                            <div class="flex items-center gap-2 mt-1">
-                                <span class="text-[10px] text-slate-400 flex items-center gap-1">
-                                    <Clock class="w-3 h-3 text-slate-500" />
+                        <div class="min-w-0 flex-1">
+                            <p
+                                class="truncate text-sm font-semibold text-slate-100"
+                            >
+                                {{ log.student_name }}
+                            </p>
+                            <p class="truncate text-xs text-slate-400">
+                                {{ log.nisn }} • {{ log.class_name }}
+                            </p>
+                            <div class="mt-1 flex items-center gap-2">
+                                <span
+                                    class="flex items-center gap-1 text-[10px] text-slate-400"
+                                >
+                                    <Clock class="h-3 w-3 text-slate-500" />
                                     Masuk: {{ log.check_in_time }}
-                                    <span v-if="log.check_out_time" class="text-indigo-400 font-semibold">• Pulang: {{ log.check_out_time }}</span>
+                                    <span
+                                        v-if="log.check_out_time"
+                                        class="font-semibold text-indigo-400"
+                                        >• Pulang:
+                                        {{ log.check_out_time }}</span
+                                    >
                                 </span>
                             </div>
                         </div>
 
                         <span
                             :class="[
-                                'text-xs font-semibold px-2.5 py-1 rounded-full border',
+                                'rounded-full border px-2.5 py-1 text-xs font-semibold',
                                 log.status === 'hadir'
-                                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                                    : 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+                                    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                                    : 'border-amber-500/30 bg-amber-500/10 text-amber-400',
                             ]"
                         >
                             {{ log.status }}
                         </span>
                     </div>
 
-                    <div v-if="todayLogs.length === 0" class="h-full flex flex-col items-center justify-center text-slate-500 text-sm py-12">
-                        <Calendar class="w-10 h-10 mb-2 stroke-1 opacity-60" />
+                    <div
+                        v-if="todayLogs.length === 0"
+                        class="flex h-full flex-col items-center justify-center py-12 text-sm text-slate-500"
+                    >
+                        <Calendar class="mb-2 h-10 w-10 stroke-1 opacity-60" />
                         <p>Belum ada absensi hari ini</p>
                     </div>
                 </div>
@@ -795,55 +1081,93 @@ onUnmounted(() => {
         </main>
 
         <!-- Result Modal Popup -->
-        <div v-if="resultModal.show" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div
+            v-if="resultModal.show"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
+        >
             <div
-                class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl relative flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-200"
+                class="relative flex w-full max-w-md animate-in flex-col items-center rounded-3xl border border-slate-800 bg-slate-900 p-6 text-center shadow-2xl duration-200 zoom-in-95 fade-in"
             >
                 <div
                     :class="[
-                        'w-16 h-16 rounded-2xl flex items-center justify-center mb-4 shadow-lg',
+                        'mb-4 flex h-16 w-16 items-center justify-center rounded-2xl shadow-lg',
                         resultModal.success
-                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-emerald-500/20'
+                            ? 'border border-emerald-500/30 bg-emerald-500/20 text-emerald-400 shadow-emerald-500/20'
                             : resultModal.already_attended
-                              ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30 shadow-amber-500/20'
-                              : 'bg-rose-500/20 text-rose-400 border border-rose-500/30 shadow-rose-500/20',
+                              ? 'border border-amber-500/30 bg-amber-500/20 text-amber-400 shadow-amber-500/20'
+                              : 'border border-rose-500/30 bg-rose-500/20 text-rose-400 shadow-rose-500/20',
                     ]"
                 >
-                    <CheckCircle2 v-if="resultModal.success" class="w-8 h-8" />
-                    <AlertTriangle v-else-if="resultModal.already_attended" class="w-8 h-8" />
-                    <ShieldAlert v-else class="w-8 h-8" />
+                    <CheckCircle2 v-if="resultModal.success" class="h-8 w-8" />
+                    <AlertTriangle
+                        v-else-if="resultModal.already_attended"
+                        class="h-8 w-8"
+                    />
+                    <ShieldAlert v-else class="h-8 w-8" />
                 </div>
 
-                <h3 class="text-xl font-bold text-slate-100 mb-1">{{ resultModal.title }}</h3>
-                <p class="text-sm text-slate-300 mb-4">{{ resultModal.message }}</p>
+                <h3 class="mb-1 text-xl font-bold text-slate-100">
+                    {{ resultModal.title }}
+                </h3>
+                <p class="mb-4 text-sm text-slate-300">
+                    {{ resultModal.message }}
+                </p>
 
                 <!-- Student Details Info Box -->
-                <div v-if="resultModal.studentName" class="w-full bg-slate-950/80 border border-slate-800 rounded-2xl p-4 mb-5 text-left space-y-2">
-                    <div class="flex items-center justify-between text-xs border-b border-slate-800/80 pb-2">
+                <div
+                    v-if="resultModal.studentName"
+                    class="mb-5 w-full space-y-2 rounded-2xl border border-slate-800 bg-slate-950/80 p-4 text-left"
+                >
+                    <div
+                        class="flex items-center justify-between border-b border-slate-800/80 pb-2 text-xs"
+                    >
                         <span class="text-slate-400">Nama Siswa:</span>
-                        <span class="font-semibold text-slate-100">{{ resultModal.studentName }}</span>
+                        <span class="font-semibold text-slate-100">{{
+                            resultModal.studentName
+                        }}</span>
                     </div>
-                    <div class="flex items-center justify-between text-xs border-b border-slate-800/80 pb-2">
+                    <div
+                        class="flex items-center justify-between border-b border-slate-800/80 pb-2 text-xs"
+                    >
                         <span class="text-slate-400">NISN / Kelas:</span>
-                        <span class="font-medium text-slate-200">{{ resultModal.nisn }} ({{ resultModal.className }})</span>
+                        <span class="font-medium text-slate-200"
+                            >{{ resultModal.nisn }} ({{
+                                resultModal.className
+                            }})</span
+                        >
                     </div>
-                    <div v-if="resultModal.checkInTime" class="flex items-center justify-between text-xs border-b border-slate-800/80 pb-2">
+                    <div
+                        v-if="resultModal.checkInTime"
+                        class="flex items-center justify-between border-b border-slate-800/80 pb-2 text-xs"
+                    >
                         <span class="text-slate-400">Waktu Absen Masuk:</span>
-                        <span class="font-bold text-emerald-400">{{ resultModal.checkInTime }} WIB</span>
+                        <span class="font-bold text-emerald-400"
+                            >{{ resultModal.checkInTime }} WIB</span
+                        >
                     </div>
-                    <div v-if="resultModal.checkOutTime" class="flex items-center justify-between text-xs border-b border-slate-800/80 pb-2">
+                    <div
+                        v-if="resultModal.checkOutTime"
+                        class="flex items-center justify-between border-b border-slate-800/80 pb-2 text-xs"
+                    >
                         <span class="text-slate-400">Waktu Absen Pulang:</span>
-                        <span class="font-bold text-indigo-400">{{ resultModal.checkOutTime }} WIB</span>
+                        <span class="font-bold text-indigo-400"
+                            >{{ resultModal.checkOutTime }} WIB</span
+                        >
                     </div>
-                    <div v-if="resultModal.similarity" class="flex items-center justify-between text-xs">
+                    <div
+                        v-if="resultModal.similarity"
+                        class="flex items-center justify-between text-xs"
+                    >
                         <span class="text-slate-400">Akurasi InsightFace:</span>
-                        <span class="font-bold text-indigo-400">{{ resultModal.similarity }}% Match</span>
+                        <span class="font-bold text-indigo-400"
+                            >{{ resultModal.similarity }}% Match</span
+                        >
                     </div>
                 </div>
 
                 <button
                     @click="closeResultModal"
-                    class="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 font-semibold text-sm text-slate-200 transition cursor-pointer"
+                    class="w-full cursor-pointer rounded-xl bg-slate-800 py-3 text-sm font-semibold text-slate-200 transition hover:bg-slate-700"
                 >
                     Tutup
                 </button>

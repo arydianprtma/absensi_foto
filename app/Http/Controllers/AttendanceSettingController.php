@@ -35,10 +35,10 @@ class AttendanceSettingController extends Controller
 
         $settings = AttendanceSetting::getSettings();
         $settings->update([
-            'check_in_start' => $validated['check_in_start'] . ':00',
-            'check_in_end' => $validated['check_in_end'] . ':00',
-            'check_out_start' => $validated['check_out_start'] . ':00',
-            'check_out_end' => $validated['check_out_end'] . ':00',
+            'check_in_start' => $validated['check_in_start'].':00',
+            'check_in_end' => $validated['check_in_end'].':00',
+            'check_out_start' => $validated['check_out_start'].':00',
+            'check_out_end' => $validated['check_out_end'].':00',
         ]);
 
         return redirect()->back()->with('success', 'Pengaturan jam absensi berhasil diperbarui!');

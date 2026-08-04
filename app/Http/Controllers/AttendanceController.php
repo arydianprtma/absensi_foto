@@ -446,8 +446,8 @@ class AttendanceController extends Controller
         return response()->streamDownload(function () use ($attendances) {
             $handle = fopen('php://output', 'w');
             // Add UTF-8 BOM for Excel compatibility
-            fputs($handle, "\xEF\xBB\xBF");
-            
+            fwrite($handle, "\xEF\xBB\xBF");
+
             // Header Row
             fputcsv($handle, ['No', 'Tanggal', 'NISN', 'Nama Siswa', 'Kelas', 'Jam Masuk', 'Jam Pulang', 'Status', 'Akurasi AI Match (%)']);
 

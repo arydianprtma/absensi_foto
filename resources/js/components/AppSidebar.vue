@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { Camera, Calendar, Clock, FileText, LayoutGrid, Users } from '@lucide/vue';
+import {
+    Camera,
+    Calendar,
+    Clock,
+    FileText,
+    LayoutGrid,
+    Users,
+} from '@lucide/vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
@@ -54,7 +61,11 @@ const mainNavItems: NavItem[] = [
         <SidebarHeader class="border-b border-sidebar-border pb-3">
             <SidebarMenu>
                 <SidebarMenuItem>
-                    <SidebarMenuButton size="lg" as-child class="hover:bg-transparent">
+                    <SidebarMenuButton
+                        size="lg"
+                        as-child
+                        class="hover:bg-transparent"
+                    >
                         <Link href="/dashboard">
                             <AppLogo />
                         </Link>
