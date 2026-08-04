@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import { FileText, Filter, Calendar, Download, Eye, CheckCircle2, Edit, Save, X } from '@lucide/vue';
+import { FileText, Filter, Calendar, Download, Eye, CheckCircle2, Edit, Save, X, FileSpreadsheet, Printer } from '@lucide/vue';
 import { ref } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 
@@ -105,12 +105,22 @@ const saveStatus = (id: number) => {
                     </p>
                 </div>
 
-                <button
-                    @click="printReport"
-                    class="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 transition flex items-center gap-2 cursor-pointer shrink-0"
-                >
-                    <Download class="w-4 h-4" /> Cetak / Export Laporan
-                </button>
+                <div class="flex items-center gap-2 shrink-0">
+                    <a
+                        :href="`/reports/export-excel?date=${selectedDate}&class_name=${selectedClass}&status=${selectedStatus}`"
+                        target="_blank"
+                        class="px-4 py-2.5 rounded-xl border border-emerald-300 dark:border-emerald-700/60 bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 text-xs font-bold text-emerald-700 dark:text-emerald-400 transition flex items-center gap-2 cursor-pointer shadow-sm"
+                    >
+                        <FileSpreadsheet class="w-4 h-4" /> Export Excel (.xlsx)
+                    </a>
+
+                    <button
+                        @click="printReport"
+                        class="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 transition flex items-center gap-2 cursor-pointer shadow-sm"
+                    >
+                        <Printer class="w-4 h-4" /> Cetak Laporan
+                    </button>
+                </div>
             </div>
 
             <!-- Filter Controls -->

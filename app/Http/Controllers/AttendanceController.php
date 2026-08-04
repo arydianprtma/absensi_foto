@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AttendanceController extends Controller
 {
@@ -301,7 +302,7 @@ class AttendanceController extends Controller
     }
 
     /**
-     * Dashboard Overview & Statistics.
+     * Dashboard Overview & Statistics with Weekly Trends.
      */
     public function dashboard(): Response
     {
@@ -319,6 +320,27 @@ class AttendanceController extends Controller
         $lateTodayCount = $todayAttendances->where('status', 'terlambat')->count();
         $totalAttendedToday = $todayAttendances->count();
         $absentTodayCount = max(0, $totalStudents - $totalAttendedToday);
+
+        // Calculate 7-Day Weekly Analytics Trend Data
+        $weeklyTrend = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $dateObj = Carbon::now('Asia/Jakarta')->subDays($i);
+            $dateStr = $dateObj->format('Y-m-d');
+            $dayLabel = $dateObj->locale('id')->isoFormat('dd');
+
+            $dayLogs = Attendance::where('date', $dateStr)->get();
+            $hadirCount = $dayLogs->where('status', 'hadir')->count();
+            $terlambatCount = $dayLogs->where('status', 'terlambat')->count();
+            $izinCount = $dayLogs->whereIn('status', ['izin', 'sakit'])->count();
+
+            $weeklyTrend[] = [
+                'day' => $dayLabel,
+                'date' => $dateObj->format('d/m'),
+                'hadir' => $hadirCount,
+                'terlambat' => $terlambatCount,
+                'izin' => $izinCount,
+            ];
+        }
 
         $recentLogs = $todayAttendances->take(10)->map(function ($att) {
             return [
@@ -343,6 +365,7 @@ class AttendanceController extends Controller
                 'absent_today' => $absentTodayCount,
                 'attendance_rate' => $totalStudents > 0 ? round(($totalAttendedToday / $totalStudents) * 100, 1) : 0,
             ],
+            'weeklyTrend' => $weeklyTrend,
             'recentLogs' => $recentLogs,
         ]);
     }
@@ -393,6 +416,59 @@ class AttendanceController extends Controller
                 'class_name' => $className,
                 'status' => $status,
             ],
+        ]);
+    }
+
+    /**
+     * Export Attendance Report to Excel / CSV File.
+     */
+    public function exportExcel(Request $request): StreamedResponse
+    {
+        $date = $request->query('date', Carbon::now('Asia/Jakarta')->format('Y-m-d'));
+        $className = $request->query('class_name', 'all');
+        $status = $request->query('status', 'all');
+
+        $query = Attendance::with('student')->where('date', $date);
+
+        if ($className !== 'all') {
+            $query->whereHas('student', function ($q) use ($className) {
+                $q->where('class_name', $className);
+            });
+        }
+
+        if ($status !== 'all') {
+            $query->where('status', $status);
+        }
+
+        $attendances = $query->latest('check_in_time')->get();
+        $fileName = 'Laporan_Absensi_Siswa_'.$date.'.csv';
+
+        return response()->streamDownload(function () use ($attendances) {
+            $handle = fopen('php://output', 'w');
+            // Add UTF-8 BOM for Excel compatibility
+            fputs($handle, "\xEF\xBB\xBF");
+            
+            // Header Row
+            fputcsv($handle, ['No', 'Tanggal', 'NISN', 'Nama Siswa', 'Kelas', 'Jam Masuk', 'Jam Pulang', 'Status', 'Akurasi AI Match (%)']);
+
+            foreach ($attendances as $index => $att) {
+                fputcsv($handle, [
+                    $index + 1,
+                    $att->date->format('Y-m-d'),
+                    $att->student?->nisn ?? '-',
+                    $att->student?->name ?? '-',
+                    $att->student?->class_name ?? '-',
+                    $att->check_in_time.' WIB',
+                    $att->check_out_time ? $att->check_out_time.' WIB' : '-',
+                    ucfirst($att->status),
+                    round($att->similarity_score * 100, 1).'%',
+                ]);
+            }
+
+            fclose($handle);
+        }, $fileName, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="'.$fileName.'"',
         ]);
     }
 

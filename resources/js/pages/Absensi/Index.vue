@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { Camera, CheckCircle2, AlertTriangle, RefreshCw, UserCheck, ShieldAlert, Sparkles, Clock, Calendar, ScanFace, User, LogOut, LogIn, Eye, ArrowLeft, ArrowRight, Smile, ShieldCheck } from '@lucide/vue';
+import { Camera, CheckCircle2, AlertTriangle, RefreshCw, UserCheck, ShieldAlert, Sparkles, Clock, Calendar, ScanFace, User, LogOut, LogIn, Eye, ArrowLeft, ArrowRight, Smile, ShieldCheck, Volume2, VolumeX } from '@lucide/vue';
 import { ref, onMounted, onUnmounted } from 'vue';
 
 interface Student {
@@ -53,7 +53,8 @@ const isCameraActive = ref(false);
 const isVerifying = ref(false);
 const cameraError = ref<string | null>(null);
 const autoScanEnabled = ref(true);
-const livenessProtectionEnabled = ref(true); // Active Liveness Anti-Video Replay
+const livenessProtectionEnabled = ref(true);
+const voiceGreetingEnabled = ref(true); // Voice Text-To-Speech Greeting
 const currentChallenge = ref<Challenge | null>(null);
 const isChallengeActive = ref(false);
 const challengeCountdown = ref<number>(2);
@@ -91,6 +92,21 @@ const resultModal = ref<{
     title: '',
     message: '',
 });
+
+// Text-to-Speech Voice Synthesizer
+const speakGreeting = (text: string) => {
+    if (!voiceGreetingEnabled.value || !('speechSynthesis' in window)) return;
+    try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'id-ID';
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        window.speechSynthesis.speak(utterance);
+    } catch {
+        // speech synthesis fallback
+    }
+};
 
 // Sound feedback synthesizer using Web Audio API
 const playSound = (type: 'success' | 'error' | 'warning') => {
@@ -180,7 +196,6 @@ const triggerLivenessChallenge = (): Promise<boolean> => {
             return;
         }
 
-        // Pick random challenge
         const randomIndex = Math.floor(Math.random() * challengesList.length);
         currentChallenge.value = challengesList[randomIndex];
         isChallengeActive.value = true;
@@ -205,7 +220,6 @@ const triggerLivenessChallenge = (): Promise<boolean> => {
 const handleAutoVerify = async (isManualClick = false) => {
     if (isVerifying.value || resultModal.value.show || isChallengeActive.value) return;
 
-    // Trigger Active Liveness Challenge
     if (livenessProtectionEnabled.value && !isChallengeActive.value) {
         await triggerLivenessChallenge();
     }
@@ -233,6 +247,7 @@ const handleAutoVerify = async (isManualClick = false) => {
         // Anti-Spoofing Fraud Detection (Layar HP / Video)
         if (data.is_spoof) {
             playSound('error');
+            speakGreeting('Kecurangan terdeteksi! Gunakan wajah asli.');
             scanStatusText.value = 'KECURANGAN DETEKSI!';
             resultModal.value = {
                 show: true,
@@ -252,6 +267,11 @@ const handleAutoVerify = async (isManualClick = false) => {
 
         if (response.ok && data.success) {
             playSound('success');
+            const greetingMsg = data.attendance.type === 'pulang'
+                ? `Selamat jalan ${data.student.name}, absensi pulang berhasil.`
+                : `Selamat datang ${data.student.name}, absensi masuk berhasil.`;
+            speakGreeting(greetingMsg);
+
             scanStatusText.value = `Berhasil! Wajah Terverifikasi (${data.student.name})`;
             resultModal.value = {
                 show: true,
@@ -271,6 +291,7 @@ const handleAutoVerify = async (isManualClick = false) => {
             router.reload({ only: ['todayLogs'] });
         } else if (data.already_attended) {
             playSound('warning');
+            speakGreeting(`${data.student.name} sudah melakukan absensi hari ini.`);
             scanStatusText.value = `Siswa ${data.student.name} Sudah Absen Hari Ini`;
             resultModal.value = {
                 show: true,
@@ -288,12 +309,13 @@ const handleAutoVerify = async (isManualClick = false) => {
         } else {
             if (isManualClick || data.faces_count > 0) {
                 playSound('error');
-                scanStatusText.value = 'Wajah Tidak Dikenali';
+                speakGreeting('Maaf, verifikasi tidak cocok.');
+                scanStatusText.value = 'Wajah Tidak Dikenali / Tidak Sah';
                 resultModal.value = {
                     show: true,
                     success: false,
-                    title: 'Wajah Tidak Dikenali',
-                    message: data.message || 'Wajah tidak cocok dengan database siswa terdaftar.',
+                    title: 'Wajah Tidak Dikenali / Tidak Sah',
+                    message: data.message || 'Wajah tidak cocok (kemiripan di bawah 50.0%).',
                     similarity: data.similarity ? Math.round(data.similarity * 100) : 0,
                 };
             }
@@ -301,6 +323,7 @@ const handleAutoVerify = async (isManualClick = false) => {
     } catch (err) {
         if (isManualClick) {
             playSound('error');
+            speakGreeting('Terjadi kesalahan koneksi.');
             resultModal.value = {
                 show: true,
                 success: false,
@@ -352,6 +375,7 @@ const handleManualVerify = async () => {
 
         if (data.is_spoof) {
             playSound('error');
+            speakGreeting('Kecurangan terdeteksi! Gunakan wajah asli.');
             resultModal.value = {
                 show: true,
                 success: false,
@@ -364,6 +388,11 @@ const handleManualVerify = async () => {
 
         if (response.ok && data.success) {
             playSound('success');
+            const greetingMsg = data.attendance.type === 'pulang'
+                ? `Selamat jalan ${data.student.name}, absensi pulang berhasil.`
+                : `Selamat datang ${data.student.name}, absensi masuk berhasil.`;
+            speakGreeting(greetingMsg);
+
             resultModal.value = {
                 show: true,
                 success: true,
@@ -382,6 +411,7 @@ const handleManualVerify = async () => {
             router.reload({ only: ['todayLogs'] });
         } else if (data.already_attended) {
             playSound('warning');
+            speakGreeting(`${data.student.name} sudah melakukan absensi hari ini.`);
             resultModal.value = {
                 show: true,
                 success: false,
@@ -397,11 +427,12 @@ const handleManualVerify = async () => {
             };
         } else {
             playSound('error');
+            speakGreeting('Maaf, verifikasi tidak cocok.');
             resultModal.value = {
                 show: true,
                 success: false,
                 title: 'Verifikasi Wajah Gagal',
-                message: data.message || 'Wajah tidak cocok dengan data terdaftar.',
+                message: data.message || 'Wajah tidak cocok (kemiripan di bawah 50.0%).',
                 similarity: data.similarity ? Math.round(data.similarity * 100) : 0,
             };
         }
@@ -442,6 +473,13 @@ const toggleAutoScan = () => {
         stopAutoScanLoop();
     } else {
         startAutoScanLoop();
+    }
+};
+
+const toggleVoiceGreeting = () => {
+    voiceGreetingEnabled.value = !voiceGreetingEnabled.value;
+    if (voiceGreetingEnabled.value) {
+        speakGreeting('Suara sambutan AI diaktifkan');
     }
 };
 
@@ -490,6 +528,22 @@ onUnmounted(() => {
             </div>
 
             <div class="flex items-center gap-3">
+                <!-- Voice Greeting Toggle -->
+                <button
+                    @click="toggleVoiceGreeting"
+                    :class="[
+                        'p-2.5 rounded-xl border text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer',
+                        voiceGreetingEnabled
+                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                            : 'bg-slate-800 text-slate-400 border-slate-700'
+                    ]"
+                    :title="voiceGreetingEnabled ? 'Matikan Suara AI' : 'Aktifkan Suara AI'"
+                >
+                    <Volume2 v-if="voiceGreetingEnabled" class="w-4 h-4" />
+                    <VolumeX v-else class="w-4 h-4" />
+                    <span class="hidden sm:inline">{{ voiceGreetingEnabled ? 'Suara AI On' : 'Suara AI Off' }}</span>
+                </button>
+
                 <!-- Mode Switcher -->
                 <div class="bg-slate-950 p-1 rounded-xl border border-slate-800 flex text-xs font-semibold">
                     <button
@@ -595,7 +649,7 @@ onUnmounted(() => {
                                 <Sparkles class="w-4 h-4 text-emerald-400" /> Mode Auto-Detect AI + Tantangan Gerakan Wajah
                             </h3>
                             <p class="text-xs text-slate-400">
-                                Setiap pemindaian menampilkan tantangan acak (Kedip/Tengok) untuk memverifikasi wajah asli.
+                                Setiap pemindaian menampilkan tantangan acak (Kedip/Tengok) & menyapa nama siswa dengan suara AI.
                             </p>
                         </div>
 

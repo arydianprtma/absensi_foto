@@ -12,6 +12,7 @@ import {
     ArrowUpRight,
     Activity,
     ShieldCheck,
+    BarChart3,
 } from '@lucide/vue';
 import { ref, onMounted, onUnmounted } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -23,6 +24,14 @@ interface Stats {
     late_today: number;
     absent_today: number;
     attendance_rate: number;
+}
+
+interface TrendDay {
+    day: string;
+    date: string;
+    hadir: number;
+    terlambat: number;
+    izin: number;
 }
 
 interface LogItem {
@@ -38,6 +47,7 @@ interface LogItem {
 
 const props = defineProps<{
     stats: Stats;
+    weeklyTrend: TrendDay[];
     recentLogs: LogItem[];
 }>();
 
@@ -170,6 +180,64 @@ onUnmounted(() => {
                         <h3 class="text-3xl font-extrabold text-indigo-600 dark:text-indigo-400 tracking-tight">{{ stats.attendance_rate }}%</h3>
                         <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                             <span class="text-rose-500 font-medium">{{ stats.absent_today }} Siswa Belum Absen</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Weekly Analytics Trends Chart -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
+                <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                            <BarChart3 class="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-900 dark:text-white tracking-wide">Grafik Analytics Tren Kehadiran Mingguan</h2>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Perbandingan siswa Hadir Tepat Waktu vs Terlambat selama 7 hari terakhir</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4 text-xs font-semibold">
+                        <span class="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                            <span class="w-3 h-3 rounded-full bg-emerald-500"></span> Hadir
+                        </span>
+                        <span class="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+                            <span class="w-3 h-3 rounded-full bg-amber-500"></span> Terlambat
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Custom SVG Bar Chart -->
+                <div class="grid grid-cols-7 gap-3 items-end h-44 pt-6 pb-2 px-2 border-b border-slate-100 dark:border-slate-800">
+                    <div v-for="t in weeklyTrend" :key="t.date" class="flex flex-col items-center gap-2 h-full justify-end group">
+                        <!-- Bar container -->
+                        <div class="w-full flex items-end justify-center gap-1.5 h-32 bg-slate-50 dark:bg-slate-800/40 rounded-xl p-1.5 relative overflow-hidden">
+                            <!-- Hadir Bar -->
+                            <div
+                                :style="{ height: Math.min(100, Math.max(8, t.hadir * 25)) + '%' }"
+                                class="w-1/2 bg-emerald-500 rounded-lg transition-all duration-300 group-hover:bg-emerald-400 relative"
+                            >
+                                <span v-if="t.hadir > 0" class="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                                    {{ t.hadir }}
+                                </span>
+                            </div>
+
+                            <!-- Terlambat Bar -->
+                            <div
+                                :style="{ height: Math.min(100, Math.max(8, t.terlambat * 25)) + '%' }"
+                                class="w-1/2 bg-amber-500 rounded-lg transition-all duration-300 group-hover:bg-amber-400 relative"
+                            >
+                                <span v-if="t.terlambat > 0" class="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                                    {{ t.terlambat }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- X Label -->
+                        <div class="text-center">
+                            <p class="text-xs font-bold text-slate-800 dark:text-slate-200 capitalize">{{ t.day }}</p>
+                            <p class="text-[10px] text-slate-400">{{ t.date }}</p>
                         </div>
                     </div>
                 </div>

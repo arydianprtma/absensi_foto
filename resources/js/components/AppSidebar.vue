@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { Camera, Clock, FileText, LayoutGrid, Users } from '@lucide/vue';
+import { Camera, Calendar, Clock, FileText, LayoutGrid, Users } from '@lucide/vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
@@ -35,6 +35,11 @@ const mainNavItems: NavItem[] = [
         title: 'Kelola Jam Absensi',
         href: '/attendance-settings',
         icon: Clock,
+    },
+    {
+        title: 'Kalender Hari Libur',
+        href: '/holidays',
+        icon: Calendar,
     },
     {
         title: 'Laporan Absensi',

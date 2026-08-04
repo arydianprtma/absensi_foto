@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AttendanceSettingController;
+use App\Http\Controllers\HolidayController;
 use App\Http\Controllers\StudentController;
 use Illuminate\Support\Facades\Route;
 
@@ -27,9 +28,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/attendance-settings', [AttendanceSettingController::class, 'edit'])->name('attendance-settings.edit');
     Route::post('/attendance-settings', [AttendanceSettingController::class, 'update'])->name('attendance-settings.update');
 
-    // Attendance Reports & Edit Status
+    // Attendance Reports & Export
     Route::get('/reports', [AttendanceController::class, 'reports'])->name('reports.index');
+    Route::get('/reports/export-excel', [AttendanceController::class, 'exportExcel'])->name('reports.export_excel');
     Route::put('/attendances/{attendance}', [AttendanceController::class, 'updateStatus'])->name('attendances.update_status');
+
+    // School Holidays Management
+    Route::get('/holidays', [HolidayController::class, 'index'])->name('holidays.index');
+    Route::post('/holidays', [HolidayController::class, 'store'])->name('holidays.store');
+    Route::delete('/holidays/{holiday}', [HolidayController::class, 'destroy'])->name('holidays.destroy');
 });
 
 require __DIR__.'/settings.php';
