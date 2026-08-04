@@ -27,8 +27,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/attendance-settings', [AttendanceSettingController::class, 'edit'])->name('attendance-settings.edit');
     Route::post('/attendance-settings', [AttendanceSettingController::class, 'update'])->name('attendance-settings.update');
 
-    // Attendance Reports
+    // Attendance Reports & Edit Status
     Route::get('/reports', [AttendanceController::class, 'reports'])->name('reports.index');
+    Route::put('/attendances/{attendance}', [AttendanceController::class, 'updateStatus'])->name('attendances.update_status');
 });
 
 require __DIR__.'/settings.php';

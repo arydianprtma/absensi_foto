@@ -393,4 +393,20 @@ class AttendanceController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Update Attendance Status by Admin.
+     */
+    public function updateStatus(Request $request, Attendance $attendance)
+    {
+        $validated = $request->validate([
+            'status' => 'required|string|in:hadir,terlambat,izin,sakit,alpa',
+        ]);
+
+        $attendance->update([
+            'status' => $validated['status'],
+        ]);
+
+        return back()->with('success', 'Status absensi berhasil diperbarui!');
+    }
 }
