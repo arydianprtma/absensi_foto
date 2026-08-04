@@ -45,8 +45,8 @@ const mainNavItems: NavItem[] = [
 </script>
 
 <template>
-    <Sidebar collapsible="icon" variant="inset" class="border-r border-slate-200 dark:border-slate-800 bg-slate-900 text-slate-100">
-        <SidebarHeader class="border-b border-slate-200/50 dark:border-slate-800/80 pb-3">
+    <Sidebar collapsible="icon" variant="inset">
+        <SidebarHeader class="border-b border-sidebar-border pb-3">
             <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton size="lg" as-child class="hover:bg-transparent">
@@ -62,7 +62,7 @@ const mainNavItems: NavItem[] = [
             <NavMain :items="mainNavItems" />
         </SidebarContent>
 
-        <SidebarFooter class="border-t border-slate-200/50 dark:border-slate-800/80 pt-2">
+        <SidebarFooter class="border-t border-sidebar-border pt-2">
             <NavUser />
         </SidebarFooter>
     </Sidebar>
