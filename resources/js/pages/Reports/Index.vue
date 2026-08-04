@@ -172,7 +172,7 @@ const saveStatus = (id: number) => {
                 <div class="flex items-center gap-2">
                     <button
                         @click="applyFilters"
-                        class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 font-semibold text-xs text-white rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer"
+                        class="w-full py-2.5 bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 font-semibold text-xs text-white rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
                     >
                         <Filter class="w-3.5 h-3.5" /> Filter Data
                     </button>
@@ -185,21 +185,21 @@ const saveStatus = (id: number) => {
                     <table class="w-full text-left text-sm border-separate border-spacing-0">
                         <thead>
                             <tr class="bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider">
-                                <th class="py-3 px-4 border-b border-slate-200 dark:border-slate-800">Foto Absen AI</th>
-                                <th class="py-3 px-4 border-b border-slate-200 dark:border-slate-800">Tanggal</th>
-                                <th class="py-3 px-4 border-b border-slate-200 dark:border-slate-800">NISN</th>
-                                <th class="py-3 px-4 border-b border-slate-200 dark:border-slate-800">Nama Siswa</th>
-                                <th class="py-3 px-4 border-b border-slate-200 dark:border-slate-800">Kelas</th>
-                                <th class="py-3 px-4 border-b border-slate-200 dark:border-slate-800">Jam Masuk / Pulang</th>
-                                <th class="py-3 px-4 border-b border-slate-200 dark:border-slate-800">Kemiripan AI</th>
-                                <th class="py-3 px-4 border-b border-slate-200 dark:border-slate-800">Status Kehadiran</th>
-                                <th class="py-3 px-4 border-b border-slate-200 dark:border-slate-800 text-right">Aksi Admin</th>
+                                <th class="py-3.5 px-4 border-b border-slate-200 dark:border-slate-800">Foto Absen AI</th>
+                                <th class="py-3.5 px-4 border-b border-slate-200 dark:border-slate-800">Tanggal</th>
+                                <th class="py-3.5 px-4 border-b border-slate-200 dark:border-slate-800">NISN</th>
+                                <th class="py-3.5 px-4 border-b border-slate-200 dark:border-slate-800">Nama Siswa</th>
+                                <th class="py-3.5 px-4 border-b border-slate-200 dark:border-slate-800">Kelas</th>
+                                <th class="py-3.5 px-4 border-b border-slate-200 dark:border-slate-800">Jam Masuk / Pulang</th>
+                                <th class="py-3.5 px-4 border-b border-slate-200 dark:border-slate-800">Kemiripan AI</th>
+                                <th class="py-3.5 px-4 border-b border-slate-200 dark:border-slate-800">Status Kehadiran</th>
+                                <th class="py-3.5 px-4 border-b border-slate-200 dark:border-slate-800 text-right">Aksi Admin</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
                             <tr v-for="item in reports" :key="item.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
                                 <!-- Foto Preview -->
-                                <td class="py-2.5 px-4 border-b border-slate-100 dark:border-slate-800/60">
+                                <td class="py-3 px-4 border-b border-slate-100 dark:border-slate-800/60">
                                     <div
                                         @click="openDetailModal(item)"
                                         class="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-800 overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer hover:opacity-80 transition group relative"
@@ -212,26 +212,26 @@ const saveStatus = (id: number) => {
                                     </div>
                                 </td>
 
-                                <td class="py-2.5 px-4 font-mono text-xs border-b border-slate-100 dark:border-slate-800/60">{{ item.date }}</td>
-                                <td class="py-2.5 px-4 font-mono font-medium text-slate-900 dark:text-slate-100 border-b border-slate-100 dark:border-slate-800/60">{{ item.nisn }}</td>
-                                <td class="py-2.5 px-4 font-semibold text-slate-900 dark:text-slate-100 border-b border-slate-100 dark:border-slate-800/60">{{ item.student_name }}</td>
-                                <td class="py-2.5 px-4 border-b border-slate-100 dark:border-slate-800/60">
-                                    <span class="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-xs border border-slate-200 dark:border-slate-700">
+                                <td class="py-3 px-4 font-mono text-xs border-b border-slate-100 dark:border-slate-800/60 whitespace-nowrap">{{ item.date }}</td>
+                                <td class="py-3 px-4 font-mono font-medium text-slate-900 dark:text-slate-100 border-b border-slate-100 dark:border-slate-800/60 whitespace-nowrap">{{ item.nisn }}</td>
+                                <td class="py-3 px-4 font-semibold text-slate-900 dark:text-slate-100 border-b border-slate-100 dark:border-slate-800/60 whitespace-nowrap">{{ item.student_name }}</td>
+                                <td class="py-3 px-4 border-b border-slate-100 dark:border-slate-800/60 whitespace-nowrap">
+                                    <span class="whitespace-nowrap inline-flex items-center px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-semibold">
                                         {{ item.class_name }}
                                     </span>
                                 </td>
-                                <td class="py-2.5 px-4 text-xs border-b border-slate-100 dark:border-slate-800/60">
+                                <td class="py-3 px-4 text-xs border-b border-slate-100 dark:border-slate-800/60 whitespace-nowrap">
                                     <div class="font-semibold text-emerald-600 dark:text-emerald-400">Masuk: {{ item.check_in_time }} WIB</div>
                                     <div v-if="item.check_out_time" class="font-semibold text-indigo-600 dark:text-indigo-400">Pulang: {{ item.check_out_time }} WIB</div>
                                 </td>
-                                <td class="py-2.5 px-4 border-b border-slate-100 dark:border-slate-800/60">
-                                    <span class="px-2 py-0.5 text-xs font-semibold rounded bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20">
+                                <td class="py-3 px-4 border-b border-slate-100 dark:border-slate-800/60 whitespace-nowrap">
+                                    <span class="whitespace-nowrap inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20 text-xs font-bold shadow-sm">
                                         {{ item.similarity_percentage }}% Match
                                     </span>
                                 </td>
 
                                 <!-- Status Column (Editable inline) -->
-                                <td class="py-2.5 px-4 border-b border-slate-100 dark:border-slate-800/60">
+                                <td class="py-3 px-4 border-b border-slate-100 dark:border-slate-800/60 whitespace-nowrap">
                                     <div v-if="editingId === item.id" class="flex items-center gap-1.5">
                                         <select
                                             v-model="editStatusValue"
@@ -245,14 +245,14 @@ const saveStatus = (id: number) => {
                                         </select>
                                         <button
                                             @click="saveStatus(item.id)"
-                                            class="p-1 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition"
+                                            class="p-1 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition cursor-pointer"
                                             title="Simpan"
                                         >
                                             <Save class="w-3.5 h-3.5" />
                                         </button>
                                         <button
                                             @click="cancelEditStatus"
-                                            class="p-1 rounded-lg bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-700 dark:text-slate-200 transition"
+                                            class="p-1 rounded-lg bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-700 dark:text-slate-200 transition cursor-pointer"
                                             title="Batal"
                                         >
                                             <X class="w-3.5 h-3.5" />
@@ -262,7 +262,7 @@ const saveStatus = (id: number) => {
                                     <span
                                         v-else
                                         :class="[
-                                            'px-2.5 py-1 text-xs font-bold rounded-full border shadow-sm capitalize',
+                                            'whitespace-nowrap inline-flex items-center px-3 py-1 text-xs font-bold rounded-full border shadow-sm capitalize',
                                             item.status === 'hadir' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30' :
                                             item.status === 'terlambat' ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30' :
                                             item.status === 'izin' ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/30' :
@@ -275,18 +275,18 @@ const saveStatus = (id: number) => {
                                 </td>
 
                                 <!-- Actions -->
-                                <td class="py-2.5 px-4 border-b border-slate-100 dark:border-slate-800/60 text-right">
+                                <td class="py-3 px-4 border-b border-slate-100 dark:border-slate-800/60 text-right whitespace-nowrap">
                                     <div class="flex items-center justify-end gap-2">
                                         <button
                                             @click="openDetailModal(item)"
-                                            class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition flex items-center gap-1 cursor-pointer"
+                                            class="whitespace-nowrap px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition flex items-center gap-1.5 cursor-pointer shadow-sm"
                                             title="Cek Detail Foto & Siswa"
                                         >
                                             <Eye class="w-3.5 h-3.5" /> Detail Foto
                                         </button>
                                         <button
                                             @click="startEditStatus(item)"
-                                            class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20 transition flex items-center gap-1 cursor-pointer"
+                                            class="whitespace-nowrap px-3 py-1.5 text-xs font-semibold rounded-xl bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20 transition flex items-center gap-1.5 cursor-pointer shadow-sm"
                                             title="Ubah Status Absensi"
                                         >
                                             <Edit class="w-3.5 h-3.5" /> Edit Status
