@@ -21,8 +21,9 @@ import {
     ShieldCheck,
     Volume2,
     VolumeX,
+    X,
 } from '@lucide/vue';
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 
 interface Student {
     id: number;
@@ -66,7 +67,10 @@ defineProps<{
 
 const videoRef = ref<HTMLVideoElement | null>(null);
 const canvasRef = ref<HTMLCanvasElement | null>(null);
+const faceMeshCanvasRef = ref<HTMLCanvasElement | null>(null);
 const mediaStream = ref<MediaStream | null>(null);
+let faceMeshActive = false;
+let faceMeshInstance: any = null;
 
 const scanMode = ref<'auto' | 'manual'>('auto');
 const selectedStudentId = ref<number | string>('');
@@ -116,6 +120,7 @@ const resultModal = ref<{
     show: boolean;
     success: boolean;
     already_attended?: boolean;
+    not_checked_in?: boolean;
     is_spoof?: boolean;
     title: string;
     message: string;
@@ -134,6 +139,128 @@ const resultModal = ref<{
     title: '',
     message: '',
 });
+
+// Non-blocking Walk-through Toast System
+interface ToastItem {
+    id: string;
+    success: boolean;
+    already_attended?: boolean;
+    not_checked_in?: boolean;
+    is_alpa?: boolean;
+    is_spoof?: boolean;
+    title: string;
+    message: string;
+    studentName?: string;
+    nisn?: string;
+    className?: string;
+    checkInTime?: string;
+    checkOutTime?: string;
+    type?: string;
+    status?: string;
+    similarity?: number;
+    photoUrl?: string;
+    studentId?: number;
+}
+const activeToasts = ref<ToastItem[]>([]);
+const flashStatus = ref<'none' | 'success' | 'warning' | 'error'>('none');
+let flashTimeout: number | null = null;
+let lastScannedStudentId: number | null = null;
+let lastScannedTime = 0;
+
+const triggerFlash = (status: 'success' | 'warning' | 'error') => {
+    flashStatus.value = status;
+    if (flashTimeout) {
+        clearTimeout(flashTimeout);
+    }
+    flashTimeout = window.setTimeout(() => {
+        flashStatus.value = 'none';
+    }, 1200);
+};
+
+const showToast = (item: Omit<ToastItem, 'id'>) => {
+    const id = Math.random().toString(36).substring(2, 9);
+    const toast: ToastItem = { ...item, id };
+    activeToasts.value.push(toast);
+    
+    // Auto dismiss: 3s for success, 5s for warnings/errors/alpa
+    const duration = item.success ? 3000 : 5000;
+    setTimeout(() => {
+        removeToast(id);
+    }, duration);
+};
+
+const removeToast = (id: string) => {
+    activeToasts.value = activeToasts.value.filter(t => t.id !== id);
+};
+
+// Satpam PIN Bypass Dialog State
+const showBypassDialog = ref(false);
+const bypassStudentId = ref<number | null>(null);
+const bypassPin = ref('');
+const bypassError = ref('');
+
+const openBypass = (studentId: number) => {
+    bypassStudentId.value = studentId;
+    bypassPin.value = '';
+    bypassError.value = '';
+    showBypassDialog.value = true;
+};
+
+const pendingBypasses = ref<{id: number, name: string, nisn: string, className: string}[]>([]);
+
+watch(pendingBypasses, (newVal) => {
+    localStorage.setItem('pending_bypasses', JSON.stringify(newVal));
+}, { deep: true });
+
+const dismissBypass = (studentId: number) => {
+    pendingBypasses.value = pendingBypasses.value.filter(p => p.id !== studentId);
+};
+
+const submitBypass = async () => {
+    if (!bypassStudentId.value) return;
+    
+    try {
+        const response = await fetch('/absensi/bypass-satpam', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
+            },
+            body: JSON.stringify({
+                student_id: bypassStudentId.value,
+                pin: bypassPin.value,
+            }),
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            pendingBypasses.value = pendingBypasses.value.filter(p => p.id !== bypassStudentId.value);
+            showBypassDialog.value = false;
+            bypassStudentId.value = null;
+            
+            playSound('success');
+            speakGreeting(`Bypass satpam berhasil. Selamat jalan ${data.student.name}.`);
+            triggerFlash('success');
+            
+            showToast({
+                success: true,
+                title: 'Bypass Satpam Berhasil',
+                message: data.message,
+                studentName: data.student.name,
+                nisn: data.student.nisn,
+                className: data.student.class_name,
+                status: 'Hadir',
+            });
+            
+            router.reload({ only: ['todayLogs'] });
+        } else {
+            bypassError.value = data.message || 'PIN Satpam salah!';
+        }
+    } catch (err) {
+        console.error(err);
+        bypassError.value = 'Terjadi kesalahan koneksi.';
+    }
+};
 
 // High Definition Neural Text-to-Speech Engine
 const speakGreeting = (text: string) => {
@@ -235,6 +362,7 @@ const startCamera = async () => {
         }
 
         isCameraActive.value = true;
+        initFaceMesh();
         startAutoScanLoop();
     } catch (err) {
         cameraError.value =
@@ -250,6 +378,13 @@ const stopCamera = () => {
     }
 
     isCameraActive.value = false;
+    faceMeshActive = false;
+    if (faceMeshCanvasRef.value) {
+        const ctx = faceMeshCanvasRef.value.getContext('2d');
+        if (ctx) {
+            ctx.clearRect(0, 0, faceMeshCanvasRef.value.width, faceMeshCanvasRef.value.height);
+        }
+    }
     stopAutoScanLoop();
 };
 
@@ -314,8 +449,8 @@ const triggerLivenessChallenge = (): Promise<boolean> => {
 const handleAutoVerify = async (isManualClick = false) => {
     if (
         isVerifying.value ||
-        resultModal.value.show ||
-        isChallengeActive.value
+        isChallengeActive.value ||
+        showBypassDialog.value
     ) {
         return;
     }
@@ -359,15 +494,15 @@ const handleAutoVerify = async (isManualClick = false) => {
                 'Kecurangan terdeteksi. Gunakan wajah asli kamu di depan kamera.',
             );
             scanStatusText.value = 'KECURANGAN DETEKSI!';
-            resultModal.value = {
-                show: true,
+            triggerFlash('error');
+            showToast({
                 success: false,
                 is_spoof: true,
                 title: 'Deteksi Kecurangan (Spoofing)',
                 message:
                     data.message ||
                     'Terdeteksi foto/layar HP. Harap hadirkan wajah asli di depan kamera!',
-            };
+            });
 
             return;
         }
@@ -380,6 +515,18 @@ const handleAutoVerify = async (isManualClick = false) => {
         }
 
         if (response.ok && data.success) {
+            // Prevent double scans for the same student within 8 seconds
+            const nowTime = Date.now();
+            if (data.student && data.student.id === lastScannedStudentId && (nowTime - lastScannedTime) < 8000) {
+                isVerifying.value = false;
+                scanStatusText.value = 'Menunggu Wajah di Depan Kamera...';
+                return;
+            }
+            if (data.student) {
+                lastScannedStudentId = data.student.id;
+                lastScannedTime = nowTime;
+            }
+
             playSound('success');
             const greetingMsg =
                 data.attendance.type === 'pulang'
@@ -388,8 +535,8 @@ const handleAutoVerify = async (isManualClick = false) => {
             speakGreeting(greetingMsg);
 
             scanStatusText.value = `Berhasil! Wajah Terverifikasi (${data.student.name})`;
-            resultModal.value = {
-                show: true,
+            triggerFlash('success');
+            showToast({
                 success: true,
                 title:
                     data.attendance.type === 'pulang'
@@ -405,14 +552,26 @@ const handleAutoVerify = async (isManualClick = false) => {
                 status: data.attendance.status,
                 similarity: data.attendance.similarity_percentage,
                 photoUrl: data.attendance.photo_url,
-            };
+            });
             router.reload({ only: ['todayLogs'] });
         } else if (data.already_attended) {
+            // Prevent double warnings for the same student within 8 seconds
+            const nowTime = Date.now();
+            if (data.student && data.student.id === lastScannedStudentId && (nowTime - lastScannedTime) < 8000) {
+                isVerifying.value = false;
+                scanStatusText.value = 'Menunggu Wajah di Depan Kamera...';
+                return;
+            }
+            if (data.student) {
+                lastScannedStudentId = data.student.id;
+                lastScannedTime = nowTime;
+            }
+
             playSound('warning');
             speakGreeting(`${data.student.name}, kamu sudah absen hari ini.`);
             scanStatusText.value = `Siswa ${data.student.name} Sudah Absen Hari Ini`;
-            resultModal.value = {
-                show: true,
+            triggerFlash('warning');
+            showToast({
                 success: false,
                 already_attended: true,
                 title: 'Sudah Melakukan Absensi',
@@ -423,14 +582,51 @@ const handleAutoVerify = async (isManualClick = false) => {
                 checkInTime: data.attendance.check_in_time,
                 checkOutTime: data.attendance.check_out_time,
                 status: data.attendance.status,
-            };
+            });
+        } else if (data.not_checked_in) {
+            // Prevent double warnings for the same student within 8 seconds
+            const nowTime = Date.now();
+            if (data.student && data.student.id === lastScannedStudentId && (nowTime - lastScannedTime) < 8000) {
+                isVerifying.value = false;
+                scanStatusText.value = 'Menunggu Wajah di Depan Kamera...';
+                return;
+            }
+            if (data.student) {
+                lastScannedStudentId = data.student.id;
+                lastScannedTime = nowTime;
+            }
+
+            playSound('warning');
+            speakGreeting(`${data.student.name}, kamu belum absen masuk hari ini.`);
+            scanStatusText.value = `Siswa ${data.student.name} Belum Absen Masuk`;
+            triggerFlash('warning');
+            showToast({
+                success: false,
+                not_checked_in: true,
+                is_alpa: true,
+                title: 'Belum Absen Masuk (ALPA)',
+                message: data.message,
+                studentName: data.student.name,
+                nisn: data.student.nisn,
+                className: data.student.class_name,
+            });
+
+            const alreadyInList = pendingBypasses.value.some(p => p.id === data.student.id);
+            if (!alreadyInList) {
+                pendingBypasses.value.push({
+                    id: data.student.id,
+                    name: data.student.name,
+                    nisn: data.student.nisn,
+                    className: data.student.class_name,
+                });
+            }
         } else {
             if (isManualClick || data.faces_count > 0) {
                 playSound('error');
                 speakGreeting('Maaf, verifikasi wajah tidak cocok.');
                 scanStatusText.value = 'Wajah Tidak Dikenali / Tidak Sah';
-                resultModal.value = {
-                    show: true,
+                triggerFlash('error');
+                showToast({
                     success: false,
                     title: 'Wajah Tidak Dikenali / Tidak Sah',
                     message:
@@ -439,28 +635,24 @@ const handleAutoVerify = async (isManualClick = false) => {
                     similarity: data.similarity
                         ? Math.round(data.similarity * 100)
                         : 0,
-                };
+                });
             }
         }
     } catch (err) {
         if (isManualClick) {
             playSound('error');
             speakGreeting('Terjadi kesalahan koneksi.');
-            resultModal.value = {
-                show: true,
+            showToast({
                 success: false,
                 title: 'Kesalahan Sistem',
                 message: 'Terjadi kesalahan koneksi saat memverifikasi wajah.',
-            };
+            });
         }
 
         console.error('Auto verification request error:', err);
     } finally {
         isVerifying.value = false;
-
-        if (!resultModal.value.show) {
-            scanStatusText.value = 'Menunggu Wajah di Depan Kamera...';
-        }
+        scanStatusText.value = 'Menunggu Wajah di Depan Kamera...';
     }
 };
 
@@ -510,15 +702,15 @@ const handleManualVerify = async () => {
             speakGreeting(
                 'Kecurangan terdeteksi. Gunakan wajah asli kamu di depan kamera.',
             );
-            resultModal.value = {
-                show: true,
+            triggerFlash('error');
+            showToast({
                 success: false,
                 is_spoof: true,
                 title: 'Deteksi Kecurangan (Spoofing)',
                 message:
                     data.message ||
                     'Terdeteksi foto/layar HP. Harap hadirkan wajah asli!',
-            };
+            });
 
             return;
         }
@@ -531,8 +723,8 @@ const handleManualVerify = async () => {
                     : `Halo ${data.student.name}, absen masuk kamu berhasil.`;
             speakGreeting(greetingMsg);
 
-            resultModal.value = {
-                show: true,
+            triggerFlash('success');
+            showToast({
                 success: true,
                 title:
                     data.attendance.type === 'pulang'
@@ -548,13 +740,13 @@ const handleManualVerify = async () => {
                 status: data.attendance.status,
                 similarity: data.attendance.similarity_percentage,
                 photoUrl: data.attendance.photo_url,
-            };
+            });
             router.reload({ only: ['todayLogs'] });
         } else if (data.already_attended) {
             playSound('warning');
             speakGreeting(`${data.student.name}, kamu sudah absen hari ini.`);
-            resultModal.value = {
-                show: true,
+            triggerFlash('warning');
+            showToast({
                 success: false,
                 already_attended: true,
                 title: 'Sudah Melakukan Absensi',
@@ -565,12 +757,36 @@ const handleManualVerify = async () => {
                 checkInTime: data.attendance.check_in_time,
                 checkOutTime: data.attendance.check_out_time,
                 status: data.attendance.status,
-            };
+            });
+        } else if (data.not_checked_in) {
+            playSound('warning');
+            speakGreeting(`${data.student.name}, kamu belum absen masuk hari ini.`);
+            triggerFlash('warning');
+            showToast({
+                success: false,
+                not_checked_in: true,
+                is_alpa: true,
+                title: 'Belum Absen Masuk',
+                message: data.message,
+                studentName: data.student.name,
+                nisn: data.student.nisn,
+                className: data.student.class_name,
+            });
+
+            const alreadyInList = pendingBypasses.value.some(p => p.id === data.student.id);
+            if (!alreadyInList) {
+                pendingBypasses.value.push({
+                    id: data.student.id,
+                    name: data.student.name,
+                    nisn: data.student.nisn,
+                    className: data.student.class_name,
+                });
+            }
         } else {
             playSound('error');
             speakGreeting('Maaf, verifikasi wajah tidak cocok.');
-            resultModal.value = {
-                show: true,
+            triggerFlash('error');
+            showToast({
                 success: false,
                 title: 'Verifikasi Wajah Gagal',
                 message:
@@ -579,17 +795,16 @@ const handleManualVerify = async () => {
                 similarity: data.similarity
                     ? Math.round(data.similarity * 100)
                     : 0,
-            };
+            });
         }
     } catch (err) {
         playSound('error');
         speakGreeting('Terjadi kesalahan koneksi.');
-        resultModal.value = {
-            show: true,
+        showToast({
             success: false,
             title: 'Kesalahan Sistem',
-            message: 'Terjadi kesalahan koneksi.',
-        };
+            message: 'Terjadi kesalahan koneksi saat memverifikasi wajah.',
+        });
         console.error('Verification error:', err);
     } finally {
         isVerifying.value = false;
@@ -604,12 +819,12 @@ const startAutoScanLoop = () => {
             scanMode.value === 'auto' &&
             autoScanEnabled.value &&
             !isVerifying.value &&
-            !resultModal.value.show &&
-            !isChallengeActive.value
+            !isChallengeActive.value &&
+            !showBypassDialog.value
         ) {
             handleAutoVerify(false);
         }
-    }, 4500);
+    }, 800);
 };
 
 const stopAutoScanLoop = () => {
@@ -642,8 +857,161 @@ const closeResultModal = () => {
     scanStatusText.value = 'Menunggu Wajah di Depan Kamera...';
 };
 
+const loadScript = (src: string): Promise<boolean> => {
+    return new Promise((resolve, reject) => {
+        if (document.querySelector(`script[src="${src}"]`)) {
+            resolve(true);
+            return;
+        }
+        const script = document.createElement('script');
+        script.src = src;
+        script.async = true;
+        script.onload = () => resolve(true);
+        script.onerror = () => reject(new Error(`Failed to load script ${src}`));
+        document.head.appendChild(script);
+    });
+};
+
+const initFaceMesh = async () => {
+    try {
+        await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js');
+        await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js');
+        
+        if (!(window as any).FaceMesh) {
+            console.warn('FaceMesh not loaded from CDN');
+            return;
+        }
+
+        faceMeshInstance = new (window as any).FaceMesh({
+            locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+        });
+
+        faceMeshInstance.setOptions({
+            maxNumFaces: 1,
+            refineLandmarks: false,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
+
+        faceMeshInstance.onResults(onFaceMeshResults);
+        faceMeshActive = true;
+        
+        requestAnimationFrame(processFaceMeshFrame);
+    } catch (err) {
+        console.error('Failed to initialize client-side face mesh:', err);
+    }
+};
+
+const processFaceMeshFrame = async () => {
+    if (!faceMeshActive || !isCameraActive.value || !videoRef.value || !faceMeshInstance) {
+        return;
+    }
+    
+    if (videoRef.value.readyState >= 2) {
+        try {
+            await faceMeshInstance.send({ image: videoRef.value });
+        } catch (err) {
+            console.error('FaceMesh frame send error:', err);
+        }
+    }
+    
+    if (isCameraActive.value && faceMeshActive) {
+        requestAnimationFrame(processFaceMeshFrame);
+    }
+};
+
+const onFaceMeshResults = (results: any) => {
+    if (!faceMeshCanvasRef.value || !videoRef.value) {
+        return;
+    }
+    
+    const canvas = faceMeshCanvasRef.value;
+    const video = videoRef.value;
+    
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        return;
+    }
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+        for (const landmarks of results.multiFaceLandmarks) {
+            const dotColor = isVerifying.value ? 'rgba(59, 130, 246, 0.9)' : 'rgba(14, 165, 233, 0.85)';
+            const lineColor = isVerifying.value ? 'rgba(59, 130, 246, 0.35)' : 'rgba(14, 165, 233, 0.25)';
+            
+            // Draw 468 landmark dots
+            ctx.fillStyle = dotColor;
+            for (const landmark of landmarks) {
+                const x = landmark.x * canvas.width;
+                const y = landmark.y * canvas.height;
+                ctx.beginPath();
+                ctx.arc(x, y, 1.2, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+            
+            // Draw connected face lines
+            ctx.strokeStyle = lineColor;
+            ctx.lineWidth = 0.55;
+            
+            const drawPath = (indices: number[]) => {
+                ctx.beginPath();
+                for (let i = 0; i < indices.length; i++) {
+                    const lm = landmarks[indices[i]];
+                    if (!lm) continue;
+                    const x = lm.x * canvas.width;
+                    const y = lm.y * canvas.height;
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                ctx.stroke();
+            };
+
+            // Outer oval
+            const faceOvalIndices = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109, 10];
+            drawPath(faceOvalIndices);
+            
+            // Left eye & eyebrow
+            const leftEyeIndices = [33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246, 33];
+            const leftEyebrowIndices = [70, 63, 105, 66, 107, 55, 65, 52, 53, 46];
+            drawPath(leftEyeIndices);
+            drawPath(leftEyebrowIndices);
+            
+            // Right eye & eyebrow
+            const rightEyeIndices = [263, 249, 390, 373, 374, 380, 381, 382, 362, 398, 384, 385, 386, 387, 388, 466, 263];
+            const rightEyebrowIndices = [300, 293, 334, 296, 336, 285, 295, 282, 283, 276];
+            drawPath(rightEyeIndices);
+            drawPath(rightEyebrowIndices);
+            
+            // Lips
+            const lipsIndices = [78, 95, 88, 178, 87, 14, 317, 402, 318, 324, 308, 415, 310, 311, 312, 13, 82, 81, 80, 191, 78];
+            drawPath(lipsIndices);
+            
+            // Nose bridge
+            const noseIndices = [168, 6, 197, 195, 5, 4, 1, 242, 94, 2, 328, 462];
+            drawPath(noseIndices);
+        }
+    }
+};
+
 onMounted(() => {
     startCamera();
+    
+    // Load pending bypasses from localStorage
+    const saved = localStorage.getItem('pending_bypasses');
+    if (saved) {
+        try {
+            pendingBypasses.value = JSON.parse(saved);
+        } catch (e) {
+            console.error('Failed to parse pending bypasses:', e);
+        }
+    }
 });
 
 onUnmounted(() => {
@@ -778,7 +1146,16 @@ onUnmounted(() => {
             <div class="flex flex-col gap-6 lg:col-span-2">
                 <!-- Video Container -->
                 <div
-                    class="relative flex min-h-[420px] flex-col items-center justify-center overflow-hidden rounded-3xl border border-slate-800 bg-slate-900 shadow-2xl"
+                    :class="[
+                        'relative flex min-h-[420px] flex-col items-center justify-center overflow-hidden rounded-3xl border shadow-2xl transition-all duration-300',
+                        flashStatus === 'success'
+                            ? 'border-emerald-500 shadow-emerald-500/20 ring-4 ring-emerald-500/20'
+                            : flashStatus === 'warning'
+                              ? 'border-amber-500 shadow-amber-500/20 ring-4 ring-amber-500/20'
+                              : flashStatus === 'error'
+                                ? 'border-rose-500 shadow-rose-500/20 ring-4 ring-rose-500/20'
+                                : 'border-slate-800 bg-slate-900',
+                    ]"
                 >
                     <video
                         ref="videoRef"
@@ -788,6 +1165,10 @@ onUnmounted(() => {
                         class="h-full w-full -scale-x-100 transform object-cover"
                     ></video>
                     <canvas ref="canvasRef" class="hidden"></canvas>
+                    <canvas
+                        ref="faceMeshCanvasRef"
+                        class="absolute inset-0 h-full w-full -scale-x-100 transform object-cover pointer-events-none z-10"
+                    ></canvas>
 
                     <!-- Active Liveness Interactive Challenge Overlay Box -->
                     <div
@@ -819,23 +1200,22 @@ onUnmounted(() => {
                     <!-- Camera Overlay Box -->
                     <div
                         v-else
-                        class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center"
+                        class="pointer-events-none absolute inset-x-0 top-4 z-20 flex justify-center"
                     >
-                        <div
-                            class="relative flex h-80 w-64 items-center justify-center rounded-3xl border-2 border-dashed border-emerald-400/80"
+                        <!-- Status text overlay -->
+                        <span
+                            :class="[
+                                'flex items-center gap-1.5 rounded-full border px-4 py-2 text-xs font-bold transition-all duration-300 shadow-lg backdrop-blur-md',
+                                isVerifying 
+                                    ? 'border-indigo-500/30 bg-slate-950/90 text-indigo-400 animate-pulse' 
+                                    : 'border-emerald-500/30 bg-slate-950/80 text-emerald-400'
+                            ]"
                         >
-                            <div
-                                class="absolute top-1/2 h-0.5 w-full -translate-y-1/2 animate-bounce bg-gradient-to-r from-transparent via-emerald-400 to-transparent"
-                            ></div>
-                            <span
-                                class="absolute -top-7 flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-slate-950/80 px-3.5 py-1 text-xs font-medium text-emerald-400"
-                            >
-                                <Sparkles
-                                    class="h-3.5 w-3.5 text-emerald-400"
-                                />
-                                {{ scanStatusText }}
-                            </span>
-                        </div>
+                            <Sparkles
+                                :class="['h-3.5 w-3.5 transition-colors duration-300', isVerifying ? 'text-indigo-400' : 'text-emerald-400']"
+                            />
+                            {{ scanStatusText }}
+                        </span>
                     </div>
 
                     <!-- Live Indicator Badge & Liveness Shield -->
@@ -986,6 +1366,53 @@ onUnmounted(() => {
                         </button>
                     </template>
                 </div>
+
+                <!-- Pending Bypass List Card -->
+                <div
+                    v-if="pendingBypasses.length > 0"
+                    class="mt-6 rounded-3xl border border-amber-500/30 bg-slate-900/90 p-6 shadow-xl backdrop-blur"
+                >
+                    <div class="mb-4 flex items-center justify-between border-b border-slate-800 pb-3">
+                        <div class="flex items-center gap-2 text-amber-400">
+                            <ShieldCheck class="h-5 w-5" />
+                            <h3 class="text-sm font-bold">Persetujuan Bypass Satpam Pending</h3>
+                        </div>
+                        <span class="rounded-full bg-amber-500/20 px-2.5 py-0.5 text-[10px] font-bold text-amber-300 uppercase">
+                            {{ pendingBypasses.length }} Siswa
+                        </span>
+                    </div>
+
+                    <div class="divide-y divide-slate-800/60 max-h-[180px] overflow-y-auto pr-1">
+                        <div
+                            v-for="student in pendingBypasses"
+                            :key="student.id"
+                            class="flex items-center justify-between py-3 first:pt-0 last:pb-0"
+                        >
+                            <div class="min-w-0 flex-1">
+                                <h4 class="text-xs font-bold text-slate-100 truncate">{{ student.name }}</h4>
+                                <p class="text-[10px] text-slate-400 mt-0.5 truncate">{{ student.nisn }} • {{ student.className }}</p>
+                            </div>
+                            
+                            <div class="ml-4 flex items-center gap-2 flex-shrink-0">
+                                <button
+                                    type="button"
+                                    @click="openBypass(student.id)"
+                                    class="flex items-center gap-1 rounded-xl bg-amber-600 hover:bg-amber-700 px-3 py-1.5 text-[11px] font-bold text-white shadow-md transition cursor-pointer"
+                                >
+                                    <ShieldCheck class="h-3.5 w-3.5" /> Bypass
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="dismissBypass(student.id)"
+                                    class="rounded-xl border border-slate-700 p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition cursor-pointer"
+                                    title="Abaikan"
+                                >
+                                    <X class="h-3.5 w-3.5" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Right Side: Today's Attendance Activity Feed -->
@@ -1046,7 +1473,7 @@ onUnmounted(() => {
                                     class="flex items-center gap-1 text-[10px] text-slate-400"
                                 >
                                     <Clock class="h-3 w-3 text-slate-500" />
-                                    Masuk: {{ log.check_in_time }}
+                                    Masuk: {{ log.check_in_time || '-' }}
                                     <span
                                         v-if="log.check_out_time"
                                         class="font-semibold text-indigo-400"
@@ -1059,10 +1486,12 @@ onUnmounted(() => {
 
                         <span
                             :class="[
-                                'rounded-full border px-2.5 py-1 text-xs font-semibold',
+                                'rounded-full border px-2.5 py-1 text-xs font-semibold capitalize',
                                 log.status === 'hadir'
                                     ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
-                                    : 'border-amber-500/30 bg-amber-500/10 text-amber-400',
+                                    : log.status === 'alpa'
+                                      ? 'border-rose-500/30 bg-rose-500/10 text-rose-400'
+                                      : 'border-amber-500/30 bg-amber-500/10 text-amber-400',
                             ]"
                         >
                             {{ log.status }}
@@ -1079,98 +1508,128 @@ onUnmounted(() => {
                 </div>
             </div>
         </main>
+        
+        <!-- Floating Toasts Container (Non-Blocking) -->
+        <div class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 w-full max-w-sm">
+            <TransitionGroup
+                enter-active-class="transform ease-out duration-300 transition"
+                enter-from-class="translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-2"
+                enter-to-class="translate-y-0 opacity-100 sm:translate-x-0"
+                leave-active-class="transition ease-in duration-100"
+                leave-from-class="opacity-100"
+                leave-to-class="opacity-0"
+            >
+                <div
+                    v-for="toast in activeToasts"
+                    :key="toast.id"
+                    :class="[
+                        'flex flex-col rounded-2xl border bg-slate-900 p-4 shadow-xl text-left backdrop-blur-md',
+                        toast.success
+                            ? 'border-emerald-500/30 shadow-emerald-500/5'
+                            : (toast.already_attended || toast.not_checked_in)
+                              ? 'border-amber-500/30 shadow-amber-500/5'
+                              : 'border-rose-500/30 shadow-rose-500/5'
+                    ]"
+                >
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex items-center gap-2">
+                            <div
+                                :class="[
+                                    'flex h-8 w-8 items-center justify-center rounded-xl',
+                                    toast.success
+                                        ? 'bg-emerald-500/20 text-emerald-400'
+                                        : (toast.already_attended || toast.not_checked_in)
+                                          ? 'bg-amber-500/20 text-amber-400'
+                                          : 'bg-rose-500/20 text-rose-400'
+                                ]"
+                            >
+                                <CheckCircle2 v-if="toast.success" class="h-4 w-4" />
+                                <AlertTriangle v-else-if="toast.already_attended || toast.not_checked_in" class="h-4 w-4" />
+                                <ShieldAlert v-else class="h-4 w-4" />
+                            </div>
+                            <h4 class="text-sm font-bold text-slate-100">{{ toast.title }}</h4>
+                        </div>
+                        <button @click="removeToast(toast.id)" class="text-slate-500 hover:text-slate-300">
+                            <X class="h-4 w-4" />
+                        </button>
+                    </div>
+                    
+                    <p class="mt-2 text-xs text-slate-300">{{ toast.message }}</p>
+                    
+                    <!-- Student details if present -->
+                    <div v-if="toast.studentName" class="mt-3 space-y-1 rounded-xl bg-slate-950/60 p-3 text-[11px] border border-slate-800/40">
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">Nama:</span>
+                            <span class="font-bold text-slate-200">{{ toast.studentName }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">NISN / Kelas:</span>
+                            <span class="text-slate-300">{{ toast.nisn }} ({{ toast.className }})</span>
+                        </div>
+                        <div v-if="toast.checkInTime" class="flex justify-between">
+                            <span class="text-slate-400">Masuk:</span>
+                            <span class="font-semibold text-emerald-400">{{ toast.checkInTime }} WIB</span>
+                        </div>
+                        <div v-if="toast.checkOutTime" class="flex justify-between">
+                            <span class="text-slate-400">Pulang:</span>
+                            <span class="font-semibold text-indigo-400">{{ toast.checkOutTime }} WIB</span>
+                        </div>
+                        <div v-if="toast.status" class="flex justify-between">
+                            <span class="text-slate-400">Status:</span>
+                            <span :class="['font-bold capitalize', toast.status === 'hadir' ? 'text-emerald-400' : toast.status === 'alpa' ? 'text-rose-400' : 'text-amber-400']">{{ toast.status }}</span>
+                        </div>
+                    </div>
+                </div>
+            </TransitionGroup>
+        </div>
 
-        <!-- Result Modal Popup -->
+        <!-- Satpam PIN Bypass Dialog Modal -->
         <div
-            v-if="resultModal.show"
+            v-if="showBypassDialog"
             class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
         >
             <div
-                class="relative flex w-full max-w-md animate-in flex-col items-center rounded-3xl border border-slate-800 bg-slate-900 p-6 text-center shadow-2xl duration-200 zoom-in-95 fade-in"
+                class="relative flex w-full max-w-sm animate-in flex-col items-center rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl duration-200 zoom-in-95 fade-in"
             >
-                <div
-                    :class="[
-                        'mb-4 flex h-16 w-16 items-center justify-center rounded-2xl shadow-lg',
-                        resultModal.success
-                            ? 'border border-emerald-500/30 bg-emerald-500/20 text-emerald-400 shadow-emerald-500/20'
-                            : resultModal.already_attended
-                              ? 'border border-amber-500/30 bg-amber-500/20 text-amber-400 shadow-amber-500/20'
-                              : 'border border-rose-500/30 bg-rose-500/20 text-rose-400 shadow-rose-500/20',
-                    ]"
-                >
-                    <CheckCircle2 v-if="resultModal.success" class="h-8 w-8" />
-                    <AlertTriangle
-                        v-else-if="resultModal.already_attended"
-                        class="h-8 w-8"
-                    />
-                    <ShieldAlert v-else class="h-8 w-8" />
+                <div class="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-500/30 bg-amber-500/20 text-amber-400 shadow-lg shadow-amber-500/20">
+                    <ShieldCheck class="h-8 w-8" />
                 </div>
-
-                <h3 class="mb-1 text-xl font-bold text-slate-100">
-                    {{ resultModal.title }}
-                </h3>
-                <p class="mb-4 text-sm text-slate-300">
-                    {{ resultModal.message }}
-                </p>
-
-                <!-- Student Details Info Box -->
-                <div
-                    v-if="resultModal.studentName"
-                    class="mb-5 w-full space-y-2 rounded-2xl border border-slate-800 bg-slate-950/80 p-4 text-left"
-                >
-                    <div
-                        class="flex items-center justify-between border-b border-slate-800/80 pb-2 text-xs"
-                    >
-                        <span class="text-slate-400">Nama Siswa:</span>
-                        <span class="font-semibold text-slate-100">{{
-                            resultModal.studentName
-                        }}</span>
+                
+                <h3 class="mb-1 text-lg font-bold text-slate-100">Bypass Kehadiran Siswa</h3>
+                <p class="mb-4 text-xs text-slate-400 text-center">Masukkan PIN Satpam untuk mengizinkan absensi siswa ini.</p>
+                
+                <div class="w-full space-y-3">
+                    <div>
+                        <input
+                            v-model="bypassPin"
+                            type="password"
+                            placeholder="Masukkan PIN Satpam"
+                            class="w-full text-center tracking-widest rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-slate-100 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                            @keyup.enter="submitBypass"
+                            autofocus
+                        />
+                        <p v-if="bypassError" class="mt-1 text-center text-xs font-medium text-rose-500">
+                            {{ bypassError }}
+                        </p>
                     </div>
-                    <div
-                        class="flex items-center justify-between border-b border-slate-800/80 pb-2 text-xs"
-                    >
-                        <span class="text-slate-400">NISN / Kelas:</span>
-                        <span class="font-medium text-slate-200"
-                            >{{ resultModal.nisn }} ({{
-                                resultModal.className
-                            }})</span
+                    
+                    <div class="flex gap-2">
+                        <button
+                            type="button"
+                            @click="showBypassDialog = false"
+                            class="flex-1 rounded-xl border border-slate-700 py-2.5 text-xs font-bold text-slate-400 hover:bg-slate-800 transition"
                         >
-                    </div>
-                    <div
-                        v-if="resultModal.checkInTime"
-                        class="flex items-center justify-between border-b border-slate-800/80 pb-2 text-xs"
-                    >
-                        <span class="text-slate-400">Waktu Absen Masuk:</span>
-                        <span class="font-bold text-emerald-400"
-                            >{{ resultModal.checkInTime }} WIB</span
+                            Batal
+                        </button>
+                        <button
+                            type="button"
+                            @click="submitBypass"
+                            class="flex-1 rounded-xl bg-amber-600 py-2.5 text-xs font-bold text-white hover:bg-amber-700 shadow-md transition"
                         >
-                    </div>
-                    <div
-                        v-if="resultModal.checkOutTime"
-                        class="flex items-center justify-between border-b border-slate-800/80 pb-2 text-xs"
-                    >
-                        <span class="text-slate-400">Waktu Absen Pulang:</span>
-                        <span class="font-bold text-indigo-400"
-                            >{{ resultModal.checkOutTime }} WIB</span
-                        >
-                    </div>
-                    <div
-                        v-if="resultModal.similarity"
-                        class="flex items-center justify-between text-xs"
-                    >
-                        <span class="text-slate-400">Akurasi InsightFace:</span>
-                        <span class="font-bold text-indigo-400"
-                            >{{ resultModal.similarity }}% Match</span
-                        >
+                            Konfirmasi
+                        </button>
                     </div>
                 </div>
-
-                <button
-                    @click="closeResultModal"
-                    class="w-full cursor-pointer rounded-xl bg-slate-800 py-3 text-sm font-semibold text-slate-200 transition hover:bg-slate-700"
-                >
-                    Tutup
-                </button>
             </div>
         </div>
     </div>

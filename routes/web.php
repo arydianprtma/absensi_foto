@@ -11,6 +11,7 @@ Route::get('/', [AttendanceController::class, 'index'])->name('home');
 Route::get('/absensi', [AttendanceController::class, 'index'])->name('absensi.index');
 Route::post('/absensi/verifikasi', [AttendanceController::class, 'verify'])->name('absensi.verify');
 Route::post('/absensi/verifikasi-otomatis', [AttendanceController::class, 'autoVerify'])->name('absensi.auto_verify');
+Route::post('/absensi/bypass-satpam', [AttendanceController::class, 'bypassSatpam'])->name('absensi.bypass_satpam');
 
 // Authenticated Dashboard & Management Routes
 Route::middleware(['auth', 'verified'])->group(function () {

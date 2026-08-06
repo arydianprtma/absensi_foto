@@ -47,21 +47,40 @@ def parse_embedding_list(emb_raw) -> Optional[np.ndarray]:
     except Exception:
         return None
 
+def load_env():
+    env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
+    if os.path.exists(env_path):
+        with open(env_path, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    parts = line.split('=', 1)
+                    k = parts[0].strip()
+                    v = parts[1].strip().strip('"').strip("'")
+                    os.environ[k] = v
+
 def check_anti_spoofing(img: np.ndarray) -> tuple[bool, str]:
     """
     Passive Anti-Spoofing check using Laplacian Variance & Specular Glare detection
     to prevent phone screen replay and low-quality photo prints.
     """
     try:
+        load_env()
+        threshold = float(os.getenv("ANTI_SPOOFING_THRESHOLD", "5.0"))
+        if threshold <= 0:
+            return True, "OK"
+
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
+        print(f"DEBUG check_anti_spoofing: laplacian_var = {laplacian_var:.4f}, threshold = {threshold:.4f}")
 
         # If variance is too low, image is overly blurred or re-captured from screen
-        if laplacian_var < 30.0:
-            return False, "Terdeteksi Layar HP / Foto Kertas (Gambar Terlalu Buram/Bercahaya)."
+        if laplacian_var < threshold:
+            return False, f"Terdeteksi Layar HP / Foto Kertas (Laplacian var: {laplacian_var:.2f} < {threshold:.2f})."
 
         return True, "OK"
-    except Exception:
+    except Exception as e:
+        print(f"DEBUG check_anti_spoofing error: {str(e)}")
         return True, "OK"
 
 @app.get("/health")
@@ -111,20 +130,24 @@ def verify_face(payload: dict):
         threshold = float(payload.get("threshold", 0.50)) # Threshold diset minimal 50% (0.50)
 
         if not base64_img or target_embedding_list is None:
+            print("DEBUG verify_face: Missing image or target embedding")
             return {"matched": False, "similarity": 0.0, "message": "Data gambar atau embedding referensi tidak lengkap."}
 
         ref_arr = parse_embedding_list(target_embedding_list)
         if ref_arr is None:
+            print("DEBUG verify_face: Invalid target embedding format")
             return {"matched": False, "similarity": 0.0, "message": "Format embedding referensi tidak valid."}
 
         img = decode_image_base64(base64_img)
 
         # Anti-Spoofing passive check
         is_real, spoof_msg = check_anti_spoofing(img)
+        print(f"DEBUG verify_face: check_anti_spoofing result = {is_real} ({spoof_msg})")
         if not is_real:
             return {"matched": False, "similarity": 0.0, "is_spoof": True, "message": spoof_msg}
 
         faces = face_app.get(img)
+        print(f"DEBUG verify_face: detected {len(faces)} faces")
 
         if len(faces) == 0:
             return {
@@ -141,6 +164,7 @@ def verify_face(payload: dict):
 
         sim = cosine_similarity(live_embedding, ref_arr)
         matched = bool(sim >= threshold)
+        print(f"DEBUG verify_face: similarity = {sim:.4f}, threshold = {threshold:.4f}, matched = {matched}")
 
         return {
             "matched": matched,
@@ -151,6 +175,7 @@ def verify_face(payload: dict):
             "message": "Wajah terverifikasi cocok!" if matched else f"Wajah tidak cocok / tidak sah (kemiripan: {round(max(0.0, sim)*100, 1)}% dibawah 50.0%)"
         }
     except Exception as e:
+        print(f"DEBUG verify_face: Error: {str(e)}")
         return {"matched": False, "similarity": 0.0, "message": f"Error verifikasi: {str(e)}"}
 
 @app.post("/identify-face")
@@ -161,9 +186,11 @@ def identify_face(payload: dict):
         threshold = float(payload.get("threshold", 0.50)) # Threshold diset minimal 50% (0.50)
 
         if not base64_img:
+            print("DEBUG identify_face: Missing image")
             return {"matched": False, "similarity": 0.0, "message": "Gambar snapshot kamera tidak ditemukan."}
 
         if not students_list or len(students_list) == 0:
+            print("DEBUG identify_face: Empty student list")
             return {
                 "matched": False,
                 "student_id": None,
@@ -175,6 +202,7 @@ def identify_face(payload: dict):
 
         # Anti-Spoofing passive check
         is_real, spoof_msg = check_anti_spoofing(img)
+        print(f"DEBUG identify_face: check_anti_spoofing result = {is_real} ({spoof_msg})")
         if not is_real:
             return {
                 "matched": False,
@@ -186,6 +214,7 @@ def identify_face(payload: dict):
             }
 
         faces = face_app.get(img)
+        print(f"DEBUG identify_face: detected {len(faces)} faces")
 
         if len(faces) == 0:
             return {
@@ -215,6 +244,8 @@ def identify_face(payload: dict):
                 best_similarity = sim
                 best_student = st
 
+        print(f"DEBUG identify_face: best_student = {best_student.get('name') if best_student else 'None'}, similarity = {best_similarity:.4f}, threshold = {threshold:.4f}")
+
         if best_student and best_similarity >= threshold:
             return {
                 "matched": True,
@@ -234,6 +265,7 @@ def identify_face(payload: dict):
             "message": f"Verifikasi tidak sah / tidak cocok (Kemiripan tertinggi: {round(max(0.0, best_similarity)*100, 1)}% - Syarat minimal 50.0%)"
         }
     except Exception as e:
+        print(f"DEBUG identify_face: Error: {str(e)}")
         return {"matched": False, "similarity": 0.0, "message": f"Error ekstraksi AI: {str(e)}"}
 
 if __name__ == "__main__":

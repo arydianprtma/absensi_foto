@@ -179,7 +179,33 @@ class AttendanceController extends Controller
 
         // Check-Out Logic (Absen Pulang)
         if ($isCheckOutTime) {
-            if ($existingAttendance && $existingAttendance->check_out_time) {
+            if (! $existingAttendance) {
+                $existingAttendance = Attendance::create([
+                    'student_id' => $student->id,
+                    'date' => $today,
+                    'check_in_time' => null,
+                    'check_out_time' => null,
+                    'status' => 'alpa',
+                    'photo_path' => null,
+                    'similarity_score' => $similarity,
+                ]);
+            }
+
+            if ($existingAttendance->status === 'alpa' || empty($existingAttendance->check_in_time)) {
+                return response()->json([
+                    'success' => false,
+                    'not_checked_in' => true,
+                    'message' => "{$student->name} ({$student->nisn}) tidak dapat melakukan absensi karena belum absen masuk. Status hari ini otomatis tercatat sebagai ALPA.",
+                    'student' => [
+                        'name' => $student->name,
+                        'nisn' => $student->nisn,
+                        'class_name' => $student->class_name,
+                        'id' => $student->id,
+                    ],
+                ]);
+            }
+
+            if ($existingAttendance->check_out_time) {
                 return response()->json([
                     'success' => false,
                     'already_attended' => true,
@@ -203,22 +229,10 @@ class AttendanceController extends Controller
             $fileName = 'attendances/'.$today.'/checkout-'.Str::slug($student->nisn.'-'.$student->name).'-'.time().'.jpg';
             Storage::disk('public')->put($fileName, $imageBytes);
 
-            if ($existingAttendance) {
-                $existingAttendance->update([
-                    'check_out_time' => $currentTime,
-                ]);
-                $attendance = $existingAttendance;
-            } else {
-                $attendance = Attendance::create([
-                    'student_id' => $student->id,
-                    'date' => $today,
-                    'check_in_time' => $currentTime,
-                    'check_out_time' => $currentTime,
-                    'status' => 'hadir',
-                    'photo_path' => $fileName,
-                    'similarity_score' => $similarity,
-                ]);
-            }
+            $existingAttendance->update([
+                'check_out_time' => $currentTime,
+            ]);
+            $attendance = $existingAttendance;
 
             return response()->json([
                 'success' => true,
@@ -486,5 +500,65 @@ class AttendanceController extends Controller
         ]);
 
         return back()->with('success', 'Status absensi berhasil diperbarui!');
+    }
+
+    /**
+     * Bypass check-in/check-out verification using Satpam PIN.
+     */
+    public function bypassSatpam(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'student_id' => 'required|exists:students,id',
+            'pin' => 'required|string',
+        ]);
+
+        $configuredPin = env('SATPAM_PIN', '1234');
+
+        if ($validated['pin'] !== $configuredPin) {
+            return response()->json([
+                'success' => false,
+                'message' => 'PIN Satpam salah! Silakan coba lagi.',
+            ], 200);
+        }
+
+        $student = Student::findOrFail($validated['student_id']);
+        $now = Carbon::now('Asia/Jakarta');
+        $today = $now->format('Y-m-d');
+        $currentTime = $now->format('H:i:s');
+
+        // Check if there is an existing attendance record for today
+        $attendance = Attendance::where('student_id', $student->id)
+            ->where('date', $today)
+            ->first();
+
+        if ($attendance) {
+            // Update existing record (e.g. status was 'alpa', or check-in was missed)
+            $attendance->update([
+                'check_in_time' => $attendance->check_in_time ?? $currentTime,
+                'check_out_time' => $currentTime,
+                'status' => 'hadir', // Override to 'hadir' since satpam confirmed presence
+            ]);
+        } else {
+            // Create a new record
+            $attendance = Attendance::create([
+                'student_id' => $student->id,
+                'date' => $today,
+                'check_in_time' => $currentTime,
+                'check_out_time' => $currentTime,
+                'status' => 'hadir',
+                'photo_path' => null,
+                'similarity_score' => 1.0, // Manual bypass gets 100% similarity
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "Bypass Satpam berhasil! Kehadiran {$student->name} telah dicatat.",
+            'student' => [
+                'name' => $student->name,
+                'nisn' => $student->nisn,
+                'class_name' => $student->class_name,
+            ],
+        ]);
     }
 }
