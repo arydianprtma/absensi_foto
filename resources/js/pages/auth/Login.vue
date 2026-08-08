@@ -47,18 +47,24 @@ const playTtsAndWait = (text: string): Promise<void> => {
             audio.volume = 1.0;
 
             let finished = false;
+            let fallbackTimer: any = null;
+
             const finish = () => {
                 if (!finished) {
                     finished = true;
-                    resolve();
+                    if (fallbackTimer) clearTimeout(fallbackTimer);
+                    // Add 600ms padding after audio ends so the last word finishes cleanly
+                    setTimeout(() => {
+                        resolve();
+                    }, 600);
                 }
             };
 
             audio.addEventListener('ended', finish);
             audio.addEventListener('error', finish);
 
-            // Safety fallback timeout in case audio is blocked or fails
-            setTimeout(finish, 3500);
+            // Generous fallback timeout (10s) only in case audio is blocked or network drops
+            fallbackTimer = setTimeout(finish, 10000);
 
             audio.play().catch(() => {
                 finish();
