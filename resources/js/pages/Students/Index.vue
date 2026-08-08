@@ -7,8 +7,10 @@ import {
     CheckCircle2,
     AlertCircle,
     Users,
-    ArrowLeft,
+    TriangleAlert,
+    X,
 } from '@lucide/vue';
+import { ref } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 
 interface Student {
@@ -26,12 +28,31 @@ defineProps<{
     students: Student[];
 }>();
 
-const deleteStudent = (student: Student) => {
-    if (
-        confirm(`Apakah Anda yakin ingin menghapus data siswa ${student.name}?`)
-    ) {
-        router.delete(`/students/${student.id}`);
+const deleteModal = ref<{
+    show: boolean;
+    student: Student | null;
+}>({
+    show: false,
+    student: null,
+});
+
+const confirmDeleteStudent = (student: Student) => {
+    deleteModal.value = {
+        show: true,
+        student,
+    };
+};
+
+const executeDeleteStudent = () => {
+    if (!deleteModal.value.student) {
+        return;
     }
+
+    router.delete(`/students/${deleteModal.value.student.id}`, {
+        onSuccess: () => {
+            deleteModal.value.show = false;
+        },
+    });
 };
 </script>
 
@@ -59,121 +80,159 @@ const deleteStudent = (student: Student) => {
                     </p>
                 </div>
 
-                <div class="flex items-center gap-3">
-                    <Link
-                        href="/absensi"
-                        class="flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
-                    >
-                        <ArrowLeft class="h-4 w-4" /> Mode Kamera Absensi
-                    </Link>
-                    <Link
-                        href="/students/create"
-                        class="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-700"
-                    >
-                        <Plus class="h-4 w-4" /> Tambah Siswa Baru
-                    </Link>
-                </div>
+                <Link
+                    href="/students/create"
+                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-indigo-700"
+                >
+                    <Plus class="h-4 w-4" /> Tambah Siswa Baru
+                </Link>
             </div>
 
             <!-- Table Card -->
             <div
-                class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900"
+                class="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
             >
-                <div class="overflow-x-auto">
-                    <table class="w-full border-collapse text-left text-sm">
+                <div
+                    class="flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-800"
+                >
+                    <h2
+                        class="text-base font-bold text-slate-900 dark:text-white"
+                    >
+                        Daftar Siswa Terdaftar
+                    </h2>
+                    <span
+                        class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500 dark:bg-slate-800"
+                    >
+                        Total: {{ students.length }} Siswa
+                    </span>
+                </div>
+
+                <div
+                    class="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800"
+                >
+                    <table
+                        class="w-full border-separate border-spacing-0 text-left text-sm"
+                    >
                         <thead>
                             <tr
-                                class="border-b border-slate-200 bg-slate-50 text-xs font-semibold tracking-wider text-slate-500 uppercase dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400"
+                                class="bg-slate-50 text-xs font-semibold tracking-wider text-slate-500 uppercase dark:bg-slate-800/80 dark:text-slate-400"
                             >
-                                <th class="px-4 py-3.5">Foto Wajah</th>
-                                <th class="px-4 py-3.5">NISN</th>
-                                <th class="px-4 py-3.5">Nama Lengkap</th>
-                                <th class="px-4 py-3.5">Kelas</th>
-                                <th class="px-4 py-3.5">
-                                    Status AI InsightFace
+                                <th
+                                    class="border-b border-slate-200 px-4 py-3.5 dark:border-slate-800"
+                                >
+                                    Siswa
                                 </th>
-                                <th class="px-4 py-3.5">Total Absen</th>
-                                <th class="px-4 py-3.5 text-right">Aksi</th>
+                                <th
+                                    class="border-b border-slate-200 px-4 py-3.5 dark:border-slate-800"
+                                >
+                                    NISN
+                                </th>
+                                <th
+                                    class="border-b border-slate-200 px-4 py-3.5 dark:border-slate-800"
+                                >
+                                    Kelas
+                                </th>
+                                <th
+                                    class="border-b border-slate-200 px-4 py-3.5 dark:border-slate-800"
+                                >
+                                    Status Wajah AI
+                                </th>
+                                <th
+                                    class="border-b border-slate-200 px-4 py-3.5 dark:border-slate-800"
+                                >
+                                    Total Absen
+                                </th>
+                                <th
+                                    class="border-b border-slate-200 px-4 py-3.5 text-right dark:border-slate-800"
+                                >
+                                    Aksi
+                                </th>
                             </tr>
                         </thead>
                         <tbody
-                            class="divide-y divide-slate-200 text-slate-700 dark:divide-slate-800 dark:text-slate-300"
+                            class="divide-y divide-slate-100 text-slate-700 dark:divide-slate-800 dark:text-slate-300"
                         >
                             <tr
-                                v-for="student in students"
-                                :key="student.id"
+                                v-for="st in students"
+                                :key="st.id"
                                 class="transition hover:bg-slate-50/80 dark:hover:bg-slate-800/40"
                             >
-                                <td class="px-4 py-3">
-                                    <div
-                                        class="h-10 w-10 overflow-hidden rounded-xl border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800"
-                                    >
+                                <td
+                                    class="border-b border-slate-100 px-4 py-3 dark:border-slate-800/60"
+                                >
+                                    <div class="flex items-center gap-3">
                                         <img
-                                            v-if="student.photo_url"
-                                            :src="student.photo_url"
-                                            alt="Foto Siswa"
-                                            class="h-full w-full object-cover"
+                                            :src="
+                                                st.photo_url ||
+                                                '/images/default-avatar.png'
+                                            "
+                                            alt="Foto"
+                                            class="h-9 w-9 rounded-full border border-slate-200 object-cover dark:border-slate-700"
                                         />
-                                        <div
-                                            v-else
-                                            class="flex h-full w-full items-center justify-center text-xs font-bold text-slate-400"
-                                        >
-                                            -
+                                        <div>
+                                            <div
+                                                class="font-bold text-slate-900 dark:text-white"
+                                            >
+                                                {{ st.name }}
+                                            </div>
+                                            <div
+                                                class="text-[11px] text-slate-400"
+                                            >
+                                                Terdaftar {{ st.created_at }}
+                                            </div>
                                         </div>
                                     </div>
                                 </td>
                                 <td
-                                    class="px-4 py-3 font-mono font-medium text-slate-900 dark:text-slate-100"
+                                    class="border-b border-slate-100 px-4 py-3 font-mono font-bold text-indigo-600 dark:border-slate-800/60 dark:text-indigo-400"
                                 >
-                                    {{ student.nisn }}
+                                    {{ st.nisn }}
                                 </td>
                                 <td
-                                    class="px-4 py-3 font-semibold text-slate-900 dark:text-slate-100"
+                                    class="border-b border-slate-100 px-4 py-3 font-semibold dark:border-slate-800/60"
                                 >
-                                    {{ student.name }}
+                                    {{ st.class_name }}
                                 </td>
-                                <td class="px-4 py-3">
+                                <td
+                                    class="border-b border-slate-100 px-4 py-3 dark:border-slate-800/60"
+                                >
                                     <span
-                                        class="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                                    >
-                                        {{ student.class_name }}
-                                    </span>
-                                </td>
-                                <td class="px-4 py-3">
-                                    <span
-                                        v-if="student.has_face_registered"
-                                        class="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-600 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400"
+                                        v-if="st.has_face_registered"
+                                        class="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400"
                                     >
                                         <CheckCircle2 class="h-3.5 w-3.5" />
-                                        Terdaftar 512-d
+                                        Terdaftar AI
                                     </span>
                                     <span
                                         v-else
-                                        class="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-600 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-400"
+                                        class="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400"
                                     >
                                         <AlertCircle class="h-3.5 w-3.5" />
-                                        Belum Terdaftar
+                                        Belum Foto
                                     </span>
                                 </td>
-                                <td class="px-4 py-3 font-medium">
-                                    {{ student.total_attendances }} Kali
+                                <td
+                                    class="border-b border-slate-100 px-4 py-3 font-mono text-xs font-bold dark:border-slate-800/60"
+                                >
+                                    {{ st.total_attendances }} Kali
                                 </td>
-                                <td class="px-4 py-3 text-right">
+                                <td
+                                    class="border-b border-slate-100 px-4 py-3 text-right dark:border-slate-800/60"
+                                >
                                     <div
-                                        class="flex items-center justify-end gap-1"
+                                        class="flex items-center justify-end gap-2"
                                     >
                                         <Link
-                                            :href="`/students/${student.id}/edit`"
-                                            class="rounded-lg p-2 text-indigo-600 transition hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-500/10"
-                                            title="Edit Data & Wajah Siswa"
+                                            :href="`/students/${st.id}/edit`"
+                                            class="rounded-lg bg-indigo-50 p-1.5 text-indigo-600 transition hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400"
+                                            title="Edit Data"
                                         >
                                             <Edit3 class="h-4 w-4" />
                                         </Link>
-
                                         <button
-                                            @click="deleteStudent(student)"
-                                            class="cursor-pointer rounded-lg p-2 text-rose-500 transition hover:bg-rose-50 dark:hover:bg-rose-500/10"
-                                            title="Hapus Data Siswa"
+                                            @click="confirmDeleteStudent(st)"
+                                            class="cursor-pointer rounded-lg bg-rose-50 p-1.5 text-rose-600 transition hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-400"
+                                            title="Hapus Siswa"
                                         >
                                             <Trash2 class="h-4 w-4" />
                                         </button>
@@ -183,16 +242,79 @@ const deleteStudent = (student: Student) => {
 
                             <tr v-if="students.length === 0">
                                 <td
-                                    colspan="7"
+                                    colspan="6"
                                     class="py-12 text-center text-sm text-slate-400"
                                 >
-                                    Belum ada data siswa terdaftar. Klik
-                                    <strong>"Tambah Siswa Baru"</strong> untuk
-                                    mendaftarkan.
+                                    Belum ada data siswa terdaftar.
                                 </td>
                             </tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Delete Modal -->
+        <div
+            v-if="deleteModal.show"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
+        >
+            <div
+                class="relative w-full max-w-md animate-in space-y-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl duration-150 fade-in zoom-in dark:border-slate-800 dark:bg-slate-900"
+            >
+                <div
+                    class="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800"
+                >
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="rounded-2xl bg-rose-50 p-2.5 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400"
+                        >
+                            <TriangleAlert class="h-6 w-6" />
+                        </div>
+                        <div>
+                            <h3
+                                class="text-base font-bold text-slate-900 dark:text-white"
+                            >
+                                Hapus Data Siswa
+                            </h3>
+                            <p class="text-xs text-slate-500">
+                                Konfirmasi Hapus Data Siswa
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        @click="deleteModal.show = false"
+                        class="cursor-pointer rounded-xl p-1.5 text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800"
+                    >
+                        <X class="h-5 w-5" />
+                    </button>
+                </div>
+
+                <p
+                    class="text-xs leading-relaxed font-medium text-slate-600 dark:text-slate-300"
+                >
+                    Apakah Anda yakin ingin menghapus data siswa
+                    <strong class="text-slate-900 dark:text-white">{{
+                        deleteModal.student?.name
+                    }}</strong>
+                    (NISN: {{ deleteModal.student?.nisn }})? Seluruh riwayat
+                    absensi dan sampel wajah siswa ini juga akan dihapus secara
+                    permanen.
+                </p>
+
+                <div class="flex items-center justify-end gap-3 pt-2">
+                    <button
+                        @click="deleteModal.show = false"
+                        class="cursor-pointer rounded-xl border border-slate-300 px-4 py-2.5 text-xs font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                    >
+                        Batal
+                    </button>
+                    <button
+                        @click="executeDeleteStudent"
+                        class="flex cursor-pointer items-center gap-2 rounded-xl bg-rose-600 px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-rose-700"
+                    >
+                        <Trash2 class="h-4 w-4" /> Ya, Hapus Sekarang
+                    </button>
                 </div>
             </div>
         </div>
