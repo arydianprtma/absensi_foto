@@ -24,7 +24,7 @@ import {
     X,
     Cpu,
 } from '@lucide/vue';
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 
 interface Student {
     id: number;
@@ -1078,6 +1078,75 @@ let rfidKeyTimeout: any = null;
 const rfidStudentPopup = ref<any>(null);
 const rfidModalOpen = ref(false);
 
+const rfidPopupTheme = computed(() => {
+    if (!rfidStudentPopup.value) return null;
+
+    const p = rfidStudentPopup.value;
+
+    // 1. Success Check-In (Hadir / Masuk) -> Emerald / Green
+    if (p.success && (p.attendance?.type === 'masuk' || !p.attendance?.type)) {
+        return {
+            badgeText: 'PRESENSI MASUK BERHASIL',
+            badgeClass:
+                'border-emerald-500/30 bg-emerald-500/20 text-emerald-300',
+            cardBorder:
+                'border-emerald-500/40 bg-gradient-to-br from-slate-950 via-emerald-950/90 to-slate-950',
+            iconBg: 'bg-emerald-600 shadow-emerald-500/30',
+            statusBadgeBg: 'bg-emerald-500',
+            bannerClass:
+                'border-emerald-500/30 bg-emerald-500/15 text-emerald-200',
+            uidBadgeClass:
+                'border-emerald-400/30 bg-emerald-400/10 text-emerald-300',
+            icon: CheckCircle2,
+        };
+    }
+
+    // 2. Success Check-Out (Pulang) -> Indigo / Blue
+    if (p.success && p.attendance?.type === 'pulang') {
+        return {
+            badgeText: 'PRESENSI PULANG BERHASIL',
+            badgeClass: 'border-indigo-500/30 bg-indigo-500/20 text-indigo-300',
+            cardBorder:
+                'border-indigo-500/40 bg-gradient-to-br from-slate-950 via-indigo-950/90 to-slate-950',
+            iconBg: 'bg-indigo-600 shadow-indigo-500/30',
+            statusBadgeBg: 'bg-indigo-500',
+            bannerClass:
+                'border-indigo-500/30 bg-indigo-500/15 text-indigo-200',
+            uidBadgeClass:
+                'border-indigo-400/30 bg-indigo-400/10 text-indigo-300',
+            icon: LogOut,
+        };
+    }
+
+    // 3. Already Attended Warning -> Amber / Kuning
+    if (p.already_attended) {
+        return {
+            badgeText: 'SUDAH MELAKUKAN PRESENSI',
+            badgeClass: 'border-amber-500/30 bg-amber-500/20 text-amber-300',
+            cardBorder:
+                'border-amber-500/40 bg-gradient-to-br from-slate-950 via-amber-950/90 to-slate-950',
+            iconBg: 'bg-amber-600 shadow-amber-500/30',
+            statusBadgeBg: 'bg-amber-500',
+            bannerClass: 'border-amber-500/30 bg-amber-500/15 text-amber-200',
+            uidBadgeClass: 'border-amber-400/30 bg-amber-400/10 text-amber-300',
+            icon: Clock,
+        };
+    }
+
+    // 4. Failure / Alpa / Unregistered Card -> Rose / Merah
+    return {
+        badgeText: 'PERINGATAN ABSENSI (ALPA / TIDAK SAH)',
+        badgeClass: 'border-rose-500/30 bg-rose-500/20 text-rose-300',
+        cardBorder:
+            'border-rose-500/40 bg-gradient-to-br from-slate-950 via-rose-950/90 to-slate-950',
+        iconBg: 'bg-rose-600 shadow-rose-500/30',
+        statusBadgeBg: 'bg-rose-500',
+        bannerClass: 'border-rose-500/30 bg-rose-500/15 text-rose-200',
+        uidBadgeClass: 'border-rose-400/30 bg-rose-400/10 text-rose-300',
+        icon: AlertTriangle,
+    };
+});
+
 const handleRfidKeyPress = async (e: KeyboardEvent) => {
     const activeEl = document.activeElement;
     if (
@@ -1870,15 +1939,13 @@ onUnmounted(() => {
 
         <!-- INSTANT RFID DIGITAL STUDENT ID CARD POPUP MODAL -->
         <div
-            v-if="rfidModalOpen && rfidStudentPopup"
+            v-if="rfidModalOpen && rfidStudentPopup && rfidPopupTheme"
             class="fixed inset-0 z-50 flex animate-in items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md duration-200 fade-in"
         >
             <div
                 :class="[
-                    'relative w-full max-w-lg space-y-6 overflow-hidden rounded-3xl border p-6 font-sans text-white shadow-2xl',
-                    rfidStudentPopup.success
-                        ? 'border-indigo-500/30 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900'
-                        : 'border-rose-500/30 bg-gradient-to-br from-slate-900 via-rose-950/70 to-slate-900',
+                    'relative w-full max-w-lg space-y-6 overflow-hidden rounded-3xl border p-6 font-sans text-white shadow-2xl transition-all duration-300',
+                    rfidPopupTheme.cardBorder,
                 ]"
             >
                 <!-- Close Button -->
@@ -1895,25 +1962,19 @@ onUnmounted(() => {
                         <div
                             :class="[
                                 'flex h-10 w-10 items-center justify-center rounded-2xl shadow-lg',
-                                rfidStudentPopup.success
-                                    ? 'bg-indigo-600 shadow-indigo-500/30'
-                                    : 'bg-rose-600 shadow-rose-500/30',
+                                rfidPopupTheme.iconBg,
                             ]"
                         >
                             <Cpu class="h-5 w-5 text-amber-300" />
                         </div>
                         <div>
                             <span
-                                v-if="rfidStudentPopup.success"
-                                class="inline-block rounded-full border border-emerald-500/30 bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-emerald-300 uppercase"
+                                :class="[
+                                    'inline-block rounded-full border px-2.5 py-0.5 text-[10px] font-bold tracking-wider uppercase',
+                                    rfidPopupTheme.badgeClass,
+                                ]"
                             >
-                                PRESENSI TAP KARTU RFID BERHASIL
-                            </span>
-                            <span
-                                v-else
-                                class="inline-block rounded-full border border-rose-500/30 bg-rose-500/20 px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-rose-300 uppercase"
-                            >
-                                PERINGATAN ABSENSI RFID
+                                {{ rfidPopupTheme.badgeText }}
                             </span>
                             <h3 class="text-lg font-black text-white">
                                 KARTU TANDA PENGENAL SISWA
@@ -1923,7 +1984,10 @@ onUnmounted(() => {
 
                     <!-- Clean UID Badge in Top Right -->
                     <div
-                        class="hidden rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-1 font-mono text-xs font-bold text-amber-400 sm:block"
+                        :class="[
+                            'hidden rounded-xl border px-3 py-1 font-mono text-xs font-bold sm:block',
+                            rfidPopupTheme.uidBadgeClass,
+                        ]"
                     >
                         UID: {{ rfidStudentPopup.rfid_uid }}
                     </div>
@@ -1937,7 +2001,7 @@ onUnmounted(() => {
                     <!-- Student Photo -->
                     <div class="relative shrink-0">
                         <div
-                            class="h-32 w-24 overflow-hidden rounded-2xl border-2 border-indigo-400/40 bg-slate-800 shadow-xl"
+                            class="h-32 w-24 overflow-hidden rounded-2xl border-2 border-white/20 bg-slate-800 shadow-xl"
                         >
                             <img
                                 v-if="rfidStudentPopup.student.photo_url"
@@ -1955,16 +2019,13 @@ onUnmounted(() => {
                         <div
                             :class="[
                                 'absolute -right-2 -bottom-2 flex h-7 w-7 items-center justify-center rounded-full border-2 border-slate-900 text-white shadow-md',
-                                rfidStudentPopup.success
-                                    ? 'bg-emerald-500'
-                                    : 'bg-rose-500',
+                                rfidPopupTheme.statusBadgeBg,
                             ]"
                         >
-                            <CheckCircle2
-                                v-if="rfidStudentPopup.success"
+                            <component
+                                :is="rfidPopupTheme.icon"
                                 class="h-4 w-4"
                             />
-                            <AlertTriangle v-else class="h-4 w-4" />
                         </div>
                     </div>
 
@@ -2034,13 +2095,11 @@ onUnmounted(() => {
                     </p>
                 </div>
 
-                <!-- Clean Notification Banner (Message Only) -->
+                <!-- Clean Notification Banner (Message Only with Dynamic Theme) -->
                 <div
                     :class="[
                         'rounded-xl border p-4 text-xs leading-relaxed font-bold',
-                        rfidStudentPopup.success
-                            ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
-                            : 'border-rose-500/30 bg-rose-500/10 text-rose-300',
+                        rfidPopupTheme.bannerClass,
                     ]"
                 >
                     {{ rfidStudentPopup.message }}

@@ -253,10 +253,12 @@ class AttendanceController extends Controller
             }
 
             if ($existingAttendance->check_out_time) {
+                $formattedTime = substr((string) $existingAttendance->check_out_time, 0, 5);
+
                 return response()->json([
                     'success' => false,
                     'already_attended' => true,
-                    'message' => "{$student->name} ({$student->nisn}) SUDAH melakukan absensi PULANG hari ini pada jam {$existingAttendance->check_out_time} WIB.",
+                    'message' => "{$student->name} ({$student->nisn}) SUDAH melakukan absensi PULANG hari ini pada jam {$formattedTime} WIB.",
                     'student' => [
                         'name' => $student->name,
                         'nisn' => $student->nisn,
@@ -309,10 +311,12 @@ class AttendanceController extends Controller
 
         // Check-In Logic (Absen Masuk)
         if ($existingAttendance) {
+            $formattedTime = substr((string) $existingAttendance->check_in_time, 0, 5);
+
             return response()->json([
                 'success' => false,
                 'already_attended' => true,
-                'message' => "{$student->name} ({$student->nisn}) SUDAH melakukan absensi MASUK hari ini pada jam {$existingAttendance->check_in_time} WIB.",
+                'message' => "{$student->name} ({$student->nisn}) SUDAH melakukan absensi MASUK hari ini pada jam {$formattedTime} WIB.",
                 'student' => [
                     'name' => $student->name,
                     'nisn' => $student->nisn,
