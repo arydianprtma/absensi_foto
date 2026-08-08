@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -24,6 +26,7 @@ class TeacherController extends Controller
                     'id' => $u->id,
                     'name' => $u->name,
                     'email' => $u->email,
+                    'rfid_uid' => $u->rfid_uid,
                     'role' => $u->role ?? 'teacher',
                     'nip' => $u->nip,
                     'phone' => $u->phone,
@@ -44,6 +47,7 @@ class TeacherController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'rfid_uid' => ['nullable', 'string', 'max:100', 'unique:users,rfid_uid'],
             'nip' => ['nullable', 'string', 'max:50'],
             'phone' => ['nullable', 'string', 'max:20'],
             'role' => ['required', 'string', Rule::in(['admin', 'teacher'])],
@@ -53,6 +57,7 @@ class TeacherController extends Controller
         User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
+            'rfid_uid' => $validated['rfid_uid'] ?? null,
             'nip' => $validated['nip'] ?? null,
             'phone' => $validated['phone'] ?? null,
             'role' => $validated['role'],
@@ -70,6 +75,7 @@ class TeacherController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($teacher->id)],
+            'rfid_uid' => ['nullable', 'string', 'max:100', Rule::unique('users', 'rfid_uid')->ignore($teacher->id)],
             'nip' => ['nullable', 'string', 'max:50'],
             'phone' => ['nullable', 'string', 'max:20'],
             'role' => ['required', 'string', Rule::in(['admin', 'teacher'])],
@@ -79,6 +85,7 @@ class TeacherController extends Controller
         $updateData = [
             'name' => $validated['name'],
             'email' => $validated['email'],
+            'rfid_uid' => $validated['rfid_uid'] ?? null,
             'nip' => $validated['nip'] ?? null,
             'phone' => $validated['phone'] ?? null,
             'role' => $validated['role'],
@@ -91,6 +98,42 @@ class TeacherController extends Controller
         $teacher->update($updateData);
 
         return back()->with('success', 'Data akun guru berhasil diperbarui.');
+    }
+
+    /**
+     * Handle Quick RFID Card Login.
+     */
+    public function rfidLogin(Request $request): JsonResponse
+    {
+        $request->validate([
+            'rfid_uid' => ['required', 'string'],
+        ]);
+
+        $rfidUid = trim($request->rfid_uid);
+
+        $user = User::where('rfid_uid', $rfidUid)->first();
+
+        if (! $user) {
+            return response()->json([
+                'success' => false,
+                'message' => "Kartu ({$rfidUid}) belum terdaftar pada akun Guru atau Staf.",
+            ], 200);
+        }
+
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        return response()->json([
+            'success' => true,
+            'message' => "Login berhasil! Selamat datang, {$user->name}.",
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+            ],
+            'redirect' => route('dashboard'),
+        ]);
     }
 
     /**

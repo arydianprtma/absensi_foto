@@ -16,6 +16,7 @@ interface TeacherItem {
     id: number;
     name: string;
     email: string;
+    rfid_uid: string | null;
     role: 'admin' | 'teacher';
     nip: string | null;
     phone: string | null;
@@ -29,6 +30,7 @@ defineProps<{
 const createForm = useForm({
     name: '',
     email: '',
+    rfid_uid: '',
     nip: '',
     phone: '',
     role: 'teacher' as 'admin' | 'teacher',
@@ -39,6 +41,7 @@ const editForm = useForm({
     id: 0,
     name: '',
     email: '',
+    rfid_uid: '',
     nip: '',
     phone: '',
     role: 'teacher' as 'admin' | 'teacher',
@@ -69,6 +72,7 @@ const openEditModal = (t: TeacherItem) => {
     editForm.id = t.id;
     editForm.name = t.name;
     editForm.email = t.email;
+    editForm.rfid_uid = t.rfid_uid || '';
     editForm.nip = t.nip || '';
     editForm.phone = t.phone || '';
     editForm.role = t.role;
@@ -185,6 +189,20 @@ const executeDelete = () => {
                                 v-model="createForm.email"
                                 placeholder="guru@sekolah.sch.id"
                                 required
+                                class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs font-medium text-slate-900 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                            />
+                        </div>
+
+                        <div>
+                            <label
+                                class="mb-1 block text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400"
+                            >
+                                Nomor Kartu RFID (Quick Login)
+                            </label>
+                            <input
+                                type="text"
+                                v-model="createForm.rfid_uid"
+                                placeholder="Contoh: 1052349182"
                                 class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs font-medium text-slate-900 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                             />
                         </div>
@@ -418,6 +436,19 @@ const executeDelete = () => {
                             type="email"
                             v-model="editForm.email"
                             required
+                            class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2 text-xs font-medium text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        />
+                    </div>
+
+                    <div>
+                        <label
+                            class="mb-1 block text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400"
+                            >Nomor Kartu RFID (Quick Login)</label
+                        >
+                        <input
+                            type="text"
+                            v-model="editForm.rfid_uid"
+                            placeholder="Contoh: 1052349182"
                             class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2 text-xs font-medium text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                         />
                     </div>

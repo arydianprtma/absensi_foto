@@ -17,6 +17,7 @@ Route::post('/absensi/verify-rfid', [AttendanceController::class, 'verifyRfid'])
 Route::post('/absensi/verifikasi-otomatis', [AttendanceController::class, 'autoVerify'])->name('absensi.auto_verify');
 Route::post('/absensi/bypass-satpam', [AttendanceController::class, 'bypassSatpam'])->name('absensi.bypass_satpam');
 Route::get('/absensi/tts-audio', [AttendanceController::class, 'ttsAudio'])->name('absensi.tts_audio');
+Route::post('/login/rfid', [TeacherController::class, 'rfidLogin'])->name('login.rfid');
 
 // Authenticated Dashboard & Management Routes
 Route::middleware(['auth', 'verified'])->group(function () {

@@ -15,6 +15,7 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property string $name
  * @property string $email
+ * @property string|null $rfid_uid
  * @property string $role
  * @property string|null $nip
  * @property string|null $phone
@@ -27,7 +28,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'role', 'nip', 'phone', 'password'])]
+#[Fillable(['name', 'email', 'rfid_uid', 'role', 'nip', 'phone', 'password'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable
 {
