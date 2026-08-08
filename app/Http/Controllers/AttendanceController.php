@@ -227,7 +227,8 @@ class AttendanceController extends Controller
             // Save snapshot
             $base64Data = preg_replace('#^data:image/\w+;base64,#i', '', $imageBase64);
             $imageBytes = base64_decode($base64Data);
-            $fileName = 'attendances/'.$today.'/checkout-'.Str::slug($student->nisn.'-'.$student->name).'-'.time().'.jpg';
+            $studentFolder = Str::slug($student->name, '_');
+            $fileName = 'attendances/'.$today.'/checkout/'.$studentFolder.'/'.time().'.jpg';
             Storage::disk('public')->put($fileName, $imageBytes);
 
             $existingAttendance->update([
@@ -279,7 +280,8 @@ class AttendanceController extends Controller
         // Save attendance photo snapshot
         $base64Data = preg_replace('#^data:image/\w+;base64,#i', '', $imageBase64);
         $imageBytes = base64_decode($base64Data);
-        $fileName = 'attendances/'.$today.'/checkin-'.Str::slug($student->nisn.'-'.$student->name).'-'.time().'.jpg';
+        $studentFolder = Str::slug($student->name, '_');
+        $fileName = 'attendances/'.$today.'/checkin/'.$studentFolder.'/'.time().'.jpg';
 
         Storage::disk('public')->put($fileName, $imageBytes);
 
