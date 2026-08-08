@@ -23,6 +23,7 @@ use Illuminate\Support\Carbon;
  */
 class Student extends Model
 {
+    /** @use HasFactory<\Illuminate\Database\Eloquent\Factories\Factory<Student>> */
     use HasFactory;
 
     protected $fillable = [

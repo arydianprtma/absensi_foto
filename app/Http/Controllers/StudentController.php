@@ -192,4 +192,40 @@ class StudentController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Batch printable RFID PVC sticker sheet layout (5 students / 10 cards per A4 page).
+     */
+    public function batchCards(Request $request): Response
+    {
+        $selectedClass = $request->query('class_name');
+
+        $query = Student::whereNotNull('rfid_uid')->where('rfid_uid', '!=', '');
+
+        if (! empty($selectedClass)) {
+            $query->where('class_name', $selectedClass);
+        }
+
+        $students = $query->orderBy('class_name')->orderBy('name')->get()->map(function ($student) {
+            return [
+                'id' => $student->id,
+                'nisn' => $student->nisn,
+                'rfid_uid' => $student->rfid_uid,
+                'nis' => $student->nis,
+                'name' => $student->name,
+                'class_name' => $student->class_name,
+                'address' => $student->address,
+                'school_origin' => $student->school_origin,
+                'photo_url' => $student->photo_path ? Storage::url($student->photo_path) : null,
+            ];
+        });
+
+        $classes = Student::select('class_name')->distinct()->orderBy('class_name')->pluck('class_name');
+
+        return Inertia::render('Students/BatchCards', [
+            'students' => $students,
+            'classes' => $classes,
+            'selectedClass' => $selectedClass ?? '',
+        ]);
+    }
 }

@@ -26,6 +26,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/students', [StudentController::class, 'index'])->name('students.index');
     Route::get('/students/create', [StudentController::class, 'create'])->name('students.create');
     Route::post('/students', [StudentController::class, 'store'])->name('students.store');
+    Route::get('/students/cards/batch-print', [StudentController::class, 'batchCards'])->name('students.cards_batch');
     Route::get('/students/{student}/card', [StudentController::class, 'card'])->name('students.card');
     Route::get('/students/{student}/edit', [StudentController::class, 'edit'])->name('students.edit');
     Route::put('/students/{student}', [StudentController::class, 'update'])->name('students.update');

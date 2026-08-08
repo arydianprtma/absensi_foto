@@ -57,8 +57,8 @@ const printCard = () => {
                         Kartu Tanda Pengenal Siswa RFID
                     </h1>
                     <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                        Kartu identitas resmi siap cetak ukuran standar PVC CR80
-                        (85.6mm × 53.9mm).
+                        Kartu identitas resmi menyamping ukuran standar PVC CR80
+                        (8.5cm × 5.5cm).
                     </p>
                 </div>
 
@@ -73,45 +73,45 @@ const printCard = () => {
                         @click="printCard"
                         class="flex cursor-pointer items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-extrabold text-white shadow-md transition hover:bg-indigo-700"
                     >
-                        <Printer class="h-4 w-4" /> Cetak Kartu Pelajar
+                        <Printer class="h-4 w-4" /> Cetak Stiker PVC
                     </button>
                 </div>
             </div>
 
-            <!-- Card Printable Container -->
+            <!-- Card Printable Container (Horizontal Grid Menyamping) -->
             <div
-                class="printable-card-area flex flex-col items-center justify-center gap-8 py-6 md:flex-row"
+                class="printable-card-area flex flex-row items-center justify-center gap-4 py-6"
             >
-                <!-- FRONT CARD (SISI DEPAN) -->
+                <!-- FRONT CARD (SISI DEPAN: 8.5cm x 5.5cm) -->
                 <div
-                    class="card-item relative flex h-[53.9mm] min-h-[214px] w-[85.6mm] min-w-[340px] flex-col justify-between overflow-hidden rounded-2xl border border-indigo-500/40 bg-gradient-to-br from-indigo-900 via-indigo-800 to-slate-900 p-4 text-white select-none"
+                    class="card-item relative flex h-[55mm] w-[85mm] max-w-[85mm] min-w-[85mm] flex-col justify-between overflow-hidden rounded-xl border border-indigo-500/40 bg-gradient-to-br from-indigo-900 via-indigo-800 to-slate-900 p-3 text-white select-none"
                 >
                     <!-- Background Accent Ornaments -->
                     <div
-                        class="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-indigo-500/20 blur-2xl"
+                        class="pointer-events-none absolute -top-10 -right-10 h-32 w-32 rounded-full bg-indigo-500/20 blur-xl"
                     ></div>
                     <div
-                        class="pointer-events-none absolute -bottom-12 -left-12 h-40 w-40 rounded-full bg-purple-500/20 blur-2xl"
+                        class="pointer-events-none absolute -bottom-10 -left-10 h-32 w-32 rounded-full bg-purple-500/20 blur-xl"
                     ></div>
 
                     <!-- Card Header -->
                     <div
-                        class="relative z-10 flex items-center justify-between border-b border-white/15 pb-2"
+                        class="relative z-10 flex items-center justify-between border-b border-white/15 pb-1.5"
                     >
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-1.5">
                             <div
-                                class="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500 text-xs font-black text-white"
+                                class="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-500 text-[10px] font-black text-white"
                             >
                                 AI
                             </div>
                             <div>
                                 <h3
-                                    class="text-[11px] leading-none font-black tracking-wider uppercase"
+                                    class="text-[10px] leading-none font-black tracking-wider uppercase"
                                 >
                                     SMK NEGERI ABSENSI AI
                                 </h3>
                                 <p
-                                    class="text-[8px] font-medium tracking-wide text-indigo-200"
+                                    class="text-[7.5px] font-medium tracking-wide text-indigo-200"
                                 >
                                     KARTU TANDA PENGENAL SISWA
                                 </p>
@@ -119,11 +119,11 @@ const printCard = () => {
                         </div>
 
                         <div
-                            class="flex items-center gap-1 rounded-full border border-white/10 bg-white/10 px-2 py-0.5 backdrop-blur"
+                            class="flex items-center gap-1 rounded-full border border-white/10 bg-white/10 px-1.5 py-0.5 backdrop-blur"
                         >
-                            <Cpu class="h-3 w-3 text-amber-400" />
+                            <Cpu class="h-2.5 w-2.5 text-amber-400" />
                             <span
-                                class="text-[8px] font-bold tracking-widest uppercase"
+                                class="text-[7px] font-bold tracking-widest uppercase"
                                 >RFID 1K</span
                             >
                         </div>
@@ -131,12 +131,12 @@ const printCard = () => {
 
                     <!-- Card Content Body -->
                     <div
-                        class="relative z-10 my-auto flex items-center gap-3.5"
+                        class="relative z-10 my-auto flex items-center gap-2.5"
                     >
                         <!-- Photo Frame -->
                         <div class="relative shrink-0">
                             <div
-                                class="h-24 w-20 overflow-hidden rounded-xl border-2 border-white/30 bg-slate-800"
+                                class="h-20 w-16 overflow-hidden rounded-lg border border-white/30 bg-slate-800"
                             >
                                 <img
                                     v-if="student.photo_url"
@@ -146,7 +146,7 @@ const printCard = () => {
                                 />
                                 <div
                                     v-else
-                                    class="flex h-full w-full items-center justify-center text-xs font-bold text-slate-500"
+                                    class="flex h-full w-full items-center justify-center text-[10px] font-bold text-slate-500"
                                 >
                                     NO PHOTO
                                 </div>
@@ -154,19 +154,19 @@ const printCard = () => {
                         </div>
 
                         <!-- Details -->
-                        <div class="space-y-1 overflow-hidden">
+                        <div class="space-y-0.5 overflow-hidden">
                             <div
-                                class="inline-block rounded border border-indigo-400/30 bg-indigo-500/30 px-2 py-0.5 text-[9px] font-black tracking-wider text-indigo-200"
+                                class="inline-block rounded border border-indigo-400/30 bg-indigo-500/30 px-1.5 py-0.5 text-[8px] font-black tracking-wider text-indigo-200"
                             >
                                 KELAS: {{ student.class_name }}
                             </div>
                             <h2
-                                class="truncate text-xs leading-tight font-black text-white uppercase"
+                                class="truncate text-[11px] leading-tight font-black text-white uppercase"
                             >
                                 {{ student.name }}
                             </h2>
                             <div
-                                class="font-mono text-[9px] leading-tight text-indigo-200/90"
+                                class="font-mono text-[8.5px] leading-tight text-indigo-200/90"
                             >
                                 NISN:
                                 <strong class="text-white">{{
@@ -181,14 +181,14 @@ const printCard = () => {
                             </div>
                             <div
                                 v-if="student.school_origin"
-                                class="flex items-center gap-1 truncate text-[8px] text-indigo-200/80"
+                                class="flex items-center gap-1 truncate text-[7.5px] text-indigo-200/80"
                             >
                                 <School class="h-2.5 w-2.5 shrink-0" />
                                 {{ student.school_origin }}
                             </div>
                             <div
                                 v-if="student.address"
-                                class="flex items-center gap-1 truncate text-[8px] text-indigo-200/80"
+                                class="flex items-center gap-1 truncate text-[7.5px] text-indigo-200/80"
                             >
                                 <MapPin class="h-2.5 w-2.5 shrink-0" />
                                 {{ student.address }}
@@ -198,7 +198,7 @@ const printCard = () => {
 
                     <!-- Card Footer -->
                     <div
-                        class="relative z-10 flex items-center justify-between border-t border-white/15 pt-1.5 font-mono text-[8px] text-indigo-200"
+                        class="relative z-10 flex items-center justify-between border-t border-white/15 pt-1 font-mono text-[7.5px] text-indigo-200"
                     >
                         <div>
                             UID RFID:
@@ -209,23 +209,24 @@ const printCard = () => {
                         <div
                             class="flex items-center gap-1 font-bold text-emerald-400"
                         >
-                            <ShieldCheck class="h-3 w-3" /> VERIFIED SMART CARD
+                            <ShieldCheck class="h-2.5 w-2.5" /> VERIFIED SMART
+                            CARD
                         </div>
                     </div>
                 </div>
 
-                <!-- BACK CARD (SISI BELAKANG) -->
+                <!-- BACK CARD (SISI BELAKANG: 8.5cm x 5.5cm) -->
                 <div
-                    class="card-item relative flex h-[53.9mm] min-h-[214px] w-[85.6mm] min-w-[340px] flex-col justify-between overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 p-4 text-white select-none"
+                    class="card-item relative flex h-[55mm] w-[85mm] max-w-[85mm] min-w-[85mm] flex-col justify-between overflow-hidden rounded-xl border border-slate-800 bg-slate-900 p-3 text-white select-none"
                 >
                     <!-- Magnetic Stripe Sim -->
                     <div
-                        class="-mx-4 h-8 w-[calc(100%+2rem)] border-y border-slate-800 bg-slate-950"
+                        class="-mx-3 h-7 w-[calc(100%+1.5rem)] border-y border-slate-800 bg-slate-950"
                     ></div>
 
                     <!-- Terms & Information -->
                     <div
-                        class="space-y-1 text-[8px] leading-tight text-slate-400"
+                        class="space-y-1 text-[7.5px] leading-tight text-slate-400"
                     >
                         <p class="font-bold text-slate-200">
                             KETENTUAN PENGGUNAAN KARTU:
@@ -248,13 +249,13 @@ const printCard = () => {
 
                     <!-- Barcode Footer -->
                     <div
-                        class="flex items-center justify-between border-t border-slate-800 pt-2"
+                        class="flex items-center justify-between border-t border-slate-800 pt-1.5"
                     >
-                        <div class="font-mono text-[9px] text-slate-400">
+                        <div class="font-mono text-[8.5px] text-slate-400">
                             SYSTEM ID: {{ student.id }} • {{ student.nisn }}
                         </div>
-                        <div class="flex items-center gap-1.5">
-                            <QrCode class="h-6 w-6 text-white" />
+                        <div class="flex items-center gap-1">
+                            <QrCode class="h-5 w-5 text-white" />
                         </div>
                     </div>
                 </div>
@@ -293,24 +294,24 @@ const printCard = () => {
 
     .printable-card-area {
         display: flex !important;
-        flex-direction: column !important;
+        flex-direction: row !important;
         align-items: center !important;
-        justify-content: flex-start !important;
-        gap: 1.5rem !important;
+        justify-content: center !important;
+        gap: 10mm !important;
         padding: 0 !important;
-        margin: 0 auto !important;
+        margin: 20mm auto !important;
         width: 100% !important;
     }
 
     .card-item {
-        width: 85.6mm !important;
-        height: 53.9mm !important;
-        min-width: 85.6mm !important;
-        min-height: 53.9mm !important;
-        max-width: 85.6mm !important;
-        max-height: 53.9mm !important;
+        width: 85mm !important;
+        height: 55mm !important;
+        min-width: 85mm !important;
+        min-height: 55mm !important;
+        max-width: 85mm !important;
+        max-height: 55mm !important;
         box-shadow: none !important;
-        border-radius: 12px !important;
+        border-radius: 10px !important;
         page-break-inside: avoid !important;
         break-inside: avoid !important;
     }

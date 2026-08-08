@@ -81,12 +81,21 @@ const executeDeleteStudent = () => {
                     </p>
                 </div>
 
-                <Link
-                    href="/students/create"
-                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-indigo-700"
-                >
-                    <Plus class="h-4 w-4" /> Tambah Siswa Baru
-                </Link>
+                <div class="flex items-center gap-3">
+                    <Link
+                        href="/students/cards/batch-print"
+                        class="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-xs font-bold text-emerald-700 shadow-sm transition hover:bg-emerald-100 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                    >
+                        <Printer class="h-4 w-4" /> Cetak Massal Stiker RFID
+                        (TU)
+                    </Link>
+                    <Link
+                        href="/students/create"
+                        class="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-indigo-700"
+                    >
+                        <Plus class="h-4 w-4" /> Tambah Siswa Baru
+                    </Link>
+                </div>
             </div>
 
             <!-- Table Card -->
