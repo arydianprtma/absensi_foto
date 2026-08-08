@@ -60,11 +60,64 @@ interface Challenge {
     icon: any;
 }
 
-defineProps<{
+const props = defineProps<{
     students: Student[];
     todayLogs: LogItem[];
     settings?: Settings;
 }>();
+
+const localLogs = ref<LogItem[]>([...(props.todayLogs || [])]);
+
+watch(
+    () => props.todayLogs,
+    (newLogs) => {
+        if (newLogs) {
+            localLogs.value = [...newLogs];
+        }
+    },
+    { deep: true, immediate: true },
+);
+
+const pushOrUpdateLocalLog = (data: any) => {
+    if (!data || !data.student) return;
+
+    const newLogItem: LogItem = {
+        id: data.attendance?.id || Date.now(),
+        student_name: data.student.name,
+        nisn: data.student.nisn,
+        class_name: data.student.class_name,
+        photo_url:
+            data.attendance?.photo_url ||
+            data.student.photo_url ||
+            data.student.photo_path,
+        check_in_time: data.attendance?.check_in_time
+            ? data.attendance.check_in_time.substring(0, 8)
+            : undefined,
+        check_out_time: data.attendance?.check_out_time
+            ? data.attendance.check_out_time.substring(0, 8)
+            : undefined,
+        status: (data.attendance?.status || 'hadir').toLowerCase(),
+    };
+
+    const existingIndex = localLogs.value.findIndex(
+        (l) => l.nisn === data.student.nisn,
+    );
+
+    if (existingIndex !== -1) {
+        localLogs.value[existingIndex] = {
+            ...localLogs.value[existingIndex],
+            ...newLogItem,
+            check_in_time:
+                newLogItem.check_in_time ||
+                localLogs.value[existingIndex].check_in_time,
+            check_out_time:
+                newLogItem.check_out_time ||
+                localLogs.value[existingIndex].check_out_time,
+        };
+    } else {
+        localLogs.value.unshift(newLogItem);
+    }
+};
 
 const videoRef = ref<HTMLVideoElement | null>(null);
 const canvasRef = ref<HTMLCanvasElement | null>(null);
@@ -560,6 +613,7 @@ const handleAutoVerify = async (isManualClick = false) => {
                 similarity: data.attendance.similarity_percentage,
                 photoUrl: data.attendance.photo_url,
             });
+            pushOrUpdateLocalLog(data);
             router.reload({ only: ['todayLogs'] });
         } else if (data.already_attended) {
             // Prevent double warnings for the same student within 8 seconds
@@ -767,6 +821,7 @@ const handleManualVerify = async () => {
                 similarity: data.attendance.similarity_percentage,
                 photoUrl: data.attendance.photo_url,
             });
+            pushOrUpdateLocalLog(data);
             router.reload({ only: ['todayLogs'] });
         } else if (data.already_attended) {
             playSound('warning');
@@ -1212,6 +1267,7 @@ const processRfidScan = async (rfidUid: string) => {
         }
 
         if (data.success) {
+            pushOrUpdateLocalLog(data);
             router.reload({ only: ['todayLogs'] });
         }
 
@@ -1680,14 +1736,14 @@ onUnmounted(() => {
                     <span
                         class="rounded-full bg-slate-800 px-2.5 py-1 text-xs text-slate-400"
                     >
-                        {{ todayLogs.length }} Siswa
+                        {{ localLogs.length }} Siswa
                     </span>
                 </div>
 
                 <!-- Log List -->
                 <div class="flex-1 space-y-3 overflow-y-auto pr-1">
                     <div
-                        v-for="log in todayLogs"
+                        v-for="log in localLogs"
                         :key="log.id"
                         class="flex items-center gap-3 rounded-2xl border border-slate-800/80 bg-slate-950/60 p-3 transition hover:border-slate-700"
                     >
@@ -1748,7 +1804,7 @@ onUnmounted(() => {
                     </div>
 
                     <div
-                        v-if="todayLogs.length === 0"
+                        v-if="localLogs.length === 0"
                         class="flex h-full flex-col items-center justify-center py-12 text-sm text-slate-500"
                     >
                         <Calendar class="mb-2 h-10 w-10 stroke-1 opacity-60" />
