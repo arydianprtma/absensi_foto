@@ -298,9 +298,9 @@ onUnmounted(() => {
                                 :value="s.id"
                             >
                                 {{ s.day_of_week }}: {{ s.subject?.name }} ({{
-                                    s.start_time
+                                    s.start_time.slice(0, 5)
                                 }}
-                                - {{ s.end_time }})
+                                - {{ s.end_time.slice(0, 5) }} WIB)
                             </option>
                         </select>
                     </div>
@@ -330,8 +330,8 @@ onUnmounted(() => {
                         <strong class="text-slate-800 dark:text-slate-200">{{
                             activeSchedule.teacher_name
                         }}</strong>
-                        • Jam: {{ activeSchedule.start_time }} -
-                        {{ activeSchedule.end_time }} WIB
+                        • Jam: {{ activeSchedule.start_time.slice(0, 5) }} -
+                        {{ activeSchedule.end_time.slice(0, 5) }} WIB
                     </p>
                 </div>
 

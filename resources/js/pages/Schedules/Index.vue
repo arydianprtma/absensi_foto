@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
 import { Bookmark, BookOpen, Plus, Trash2, Clock } from '@lucide/vue';
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 
 interface SubjectItem {
@@ -29,6 +29,18 @@ defineProps<{
 
 const activeTab = ref<'schedules' | 'subjects'>('schedules');
 
+const hoursOptions = Array.from({ length: 24 }, (_, i) =>
+    String(i).padStart(2, '0'),
+);
+const minutesOptions = Array.from({ length: 60 }, (_, i) =>
+    String(i).padStart(2, '0'),
+);
+
+const startHour = ref('07');
+const startMinute = ref('30');
+const endHour = ref('09');
+const endMinute = ref('00');
+
 const subjectForm = useForm({
     code: '',
     name: '',
@@ -42,6 +54,15 @@ const scheduleForm = useForm({
     start_time: '07:30',
     end_time: '09:00',
 });
+
+watch(
+    [startHour, startMinute, endHour, endMinute],
+    () => {
+        scheduleForm.start_time = `${startHour.value}:${startMinute.value}`;
+        scheduleForm.end_time = `${endHour.value}:${endMinute.value}`;
+    },
+    { immediate: true },
+);
 
 const submitSubject = () => {
     subjectForm.post('/subjects', {
@@ -72,7 +93,9 @@ const deleteSchedule = (id: number) => {
     <AppLayout
         :breadcrumbs="[{ title: 'Jadwal Pelajaran', href: '/schedules' }]"
     >
-        <Head title="Kelola Mata Pelajaran & Jadwal Pelajaran" />
+        <Head
+            title="Kelola Mata Pelajaran & Jadwal Pelajaran (Format 24 Jam)"
+        />
 
         <div class="mx-auto max-w-7xl space-y-8 p-6 font-sans md:p-8">
             <!-- Header -->
@@ -86,11 +109,11 @@ const deleteSchedule = (id: number) => {
                         <Bookmark
                             class="h-6 w-6 text-indigo-600 dark:text-indigo-400"
                         />
-                        Kelola Mata Pelajaran & Jadwal Pelajaran Kelas
+                        Kelola Mata Pelajaran & Jadwal Pelajaran (24 Jam)
                     </h1>
                     <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                        Atur daftar mata pelajaran dan jadwal jam tatap muka di
-                        kelas untuk absensi mapel.
+                        Atur daftar mata pelajaran dan jadwal jam kelas dalam
+                        format 24 Jam (00:00 - 23:59 WIB).
                     </p>
                 </div>
 
@@ -217,32 +240,97 @@ const deleteSchedule = (id: number) => {
                             </select>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label
-                                    class="mb-1 block text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400"
+                        <!-- Jam Mulai 24 Jam Select Dropdowns -->
+                        <div>
+                            <label
+                                class="mb-1 block text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400"
+                            >
+                                Jam Mulai (Format 24 Jam)
+                            </label>
+                            <div class="flex items-center gap-2">
+                                <div class="flex-1">
+                                    <select
+                                        v-model="startHour"
+                                        class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-xs font-bold text-slate-900 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                                    >
+                                        <option
+                                            v-for="h in hoursOptions"
+                                            :key="'startH-' + h"
+                                            :value="h"
+                                        >
+                                            Jam {{ h }}
+                                        </option>
+                                    </select>
+                                </div>
+                                <span class="text-sm font-bold text-slate-400"
+                                    >:</span
                                 >
-                                    Jam Mulai
-                                </label>
-                                <input
-                                    type="time"
-                                    v-model="scheduleForm.start_time"
-                                    required
-                                    class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs font-medium text-slate-900 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-                                />
+                                <div class="flex-1">
+                                    <select
+                                        v-model="startMinute"
+                                        class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-xs font-bold text-slate-900 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                                    >
+                                        <option
+                                            v-for="m in minutesOptions"
+                                            :key="'startM-' + m"
+                                            :value="m"
+                                        >
+                                            {{ m }} Menit
+                                        </option>
+                                    </select>
+                                </div>
+                                <div
+                                    class="rounded-lg bg-indigo-500/10 px-2.5 py-1.5 font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400"
+                                >
+                                    {{ startHour }}:{{ startMinute }} WIB
+                                </div>
                             </div>
-                            <div>
-                                <label
-                                    class="mb-1 block text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400"
+                        </div>
+
+                        <!-- Jam Selesai 24 Jam Select Dropdowns -->
+                        <div>
+                            <label
+                                class="mb-1 block text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400"
+                            >
+                                Jam Selesai (Format 24 Jam)
+                            </label>
+                            <div class="flex items-center gap-2">
+                                <div class="flex-1">
+                                    <select
+                                        v-model="endHour"
+                                        class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-xs font-bold text-slate-900 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                                    >
+                                        <option
+                                            v-for="h in hoursOptions"
+                                            :key="'endH-' + h"
+                                            :value="h"
+                                        >
+                                            Jam {{ h }}
+                                        </option>
+                                    </select>
+                                </div>
+                                <span class="text-sm font-bold text-slate-400"
+                                    >:</span
                                 >
-                                    Jam Selesai
-                                </label>
-                                <input
-                                    type="time"
-                                    v-model="scheduleForm.end_time"
-                                    required
-                                    class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs font-medium text-slate-900 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-                                />
+                                <div class="flex-1">
+                                    <select
+                                        v-model="endMinute"
+                                        class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-xs font-bold text-slate-900 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                                    >
+                                        <option
+                                            v-for="m in minutesOptions"
+                                            :key="'endM-' + m"
+                                            :value="m"
+                                        >
+                                            {{ m }} Menit
+                                        </option>
+                                    </select>
+                                </div>
+                                <div
+                                    class="rounded-lg bg-indigo-500/10 px-2.5 py-1.5 font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400"
+                                >
+                                    {{ endHour }}:{{ endMinute }} WIB
+                                </div>
                             </div>
                         </div>
 
@@ -251,7 +339,12 @@ const deleteSchedule = (id: number) => {
                             :disabled="scheduleForm.processing"
                             class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 text-xs font-bold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50"
                         >
-                            <Plus class="h-4 w-4" /> Simpan Jadwal
+                            <Plus class="h-4 w-4" /> Simpan Jadwal ({{
+                                startHour
+                            }}:{{ startMinute }} - {{ endHour }}:{{
+                                endMinute
+                            }}
+                            WIB)
                         </button>
                     </form>
                 </div>
@@ -266,7 +359,7 @@ const deleteSchedule = (id: number) => {
                         <h2
                             class="text-base font-bold text-slate-900 dark:text-white"
                         >
-                            Daftar Jadwal Pelajaran Sekolah
+                            Daftar Jadwal Pelajaran Sekolah (24 Jam)
                         </h2>
                         <span
                             class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500 dark:bg-slate-800"
@@ -303,7 +396,7 @@ const deleteSchedule = (id: number) => {
                                     <th
                                         class="border-b border-slate-200 px-4 py-3.5 dark:border-slate-800"
                                     >
-                                        Hari & Waktu
+                                        Hari & Waktu (WIB)
                                     </th>
                                     <th
                                         class="border-b border-slate-200 px-4 py-3.5 text-right dark:border-slate-800"
@@ -343,8 +436,8 @@ const deleteSchedule = (id: number) => {
                                         <span
                                             class="font-bold text-slate-900 dark:text-white"
                                             >{{ sch.day_of_week }}</span
-                                        >: {{ sch.start_time }} -
-                                        {{ sch.end_time }}
+                                        >: {{ sch.start_time.slice(0, 5) }} -
+                                        {{ sch.end_time.slice(0, 5) }} WIB
                                     </td>
                                     <td
                                         class="border-b border-slate-100 px-4 py-3 text-right dark:border-slate-800/60"
