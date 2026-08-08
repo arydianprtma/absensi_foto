@@ -3,7 +3,9 @@
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AttendanceSettingController;
 use App\Http\Controllers\HolidayController;
+use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\SubjectAttendanceController;
 use Illuminate\Support\Facades\Route;
 
 // Public Student Attendance Webcam Route
@@ -39,6 +41,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/holidays', [HolidayController::class, 'index'])->name('holidays.index');
     Route::post('/holidays', [HolidayController::class, 'store'])->name('holidays.store');
     Route::delete('/holidays/{holiday}', [HolidayController::class, 'destroy'])->name('holidays.destroy');
+
+    // Schedules & Subjects Management
+    Route::get('/schedules', [ScheduleController::class, 'index'])->name('schedules.index');
+    Route::post('/schedules', [ScheduleController::class, 'storeSchedule'])->name('schedules.store');
+    Route::delete('/schedules/{schedule}', [ScheduleController::class, 'destroySchedule'])->name('schedules.destroy');
+    Route::post('/subjects', [ScheduleController::class, 'storeSubject'])->name('subjects.store');
+    Route::delete('/subjects/{subject}', [ScheduleController::class, 'destroySubject'])->name('subjects.destroy');
+
+    // Classroom Subject Attendance
+    Route::get('/absensi-mapel', [SubjectAttendanceController::class, 'index'])->name('subject_attendance.index');
+    Route::post('/absensi-mapel/verifikasi', [SubjectAttendanceController::class, 'verify'])->name('subject_attendance.verify');
+    Route::post('/absensi-mapel/status', [SubjectAttendanceController::class, 'updateStatus'])->name('subject_attendance.update_status');
 });
 
 require __DIR__.'/settings.php';

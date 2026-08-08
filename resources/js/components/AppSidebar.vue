@@ -7,6 +7,8 @@ import {
     FileText,
     LayoutGrid,
     Users,
+    BookOpen,
+    Bookmark,
 } from '@lucide/vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -29,6 +31,11 @@ const mainNavItems: NavItem[] = [
         icon: Camera,
     },
     {
+        title: 'Absensi Mapel Kelas',
+        href: '/absensi-mapel',
+        icon: BookOpen,
+    },
+    {
         title: 'Dashboard Analitik',
         href: '/dashboard',
         icon: LayoutGrid,
@@ -37,6 +44,11 @@ const mainNavItems: NavItem[] = [
         title: 'Data Siswa & Wajah',
         href: '/students',
         icon: Users,
+    },
+    {
+        title: 'Jadwal Pelajaran',
+        href: '/schedules',
+        icon: Bookmark,
     },
     {
         title: 'Kelola Jam Absensi',

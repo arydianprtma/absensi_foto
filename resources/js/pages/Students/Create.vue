@@ -44,6 +44,7 @@ const startCamera = async () => {
             videoRef.value.srcObject = stream;
             videoRef.value.play();
         }
+
         initFaceMesh();
     } catch (err) {
         cameraError.value =
@@ -57,11 +58,19 @@ const stopCamera = () => {
         mediaStream.value.getTracks().forEach((track) => track.stop());
         mediaStream.value = null;
     }
+
     faceMeshActive = false;
+
     if (faceMeshCanvasRef.value) {
         const ctx = faceMeshCanvasRef.value.getContext('2d');
+
         if (ctx) {
-            ctx.clearRect(0, 0, faceMeshCanvasRef.value.width, faceMeshCanvasRef.value.height);
+            ctx.clearRect(
+                0,
+                0,
+                faceMeshCanvasRef.value.width,
+                faceMeshCanvasRef.value.height,
+            );
         }
     }
 };
@@ -114,41 +123,50 @@ const loadScript = (src: string): Promise<boolean> => {
     return new Promise((resolve, reject) => {
         if (document.querySelector(`script[src="${src}"]`)) {
             resolve(true);
+
             return;
         }
+
         const script = document.createElement('script');
         script.src = src;
         script.async = true;
         script.onload = () => resolve(true);
-        script.onerror = () => reject(new Error(`Failed to load script ${src}`));
+        script.onerror = () =>
+            reject(new Error(`Failed to load script ${src}`));
         document.head.appendChild(script);
     });
 };
 
 const initFaceMesh = async () => {
     try {
-        await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js');
-        await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js');
-        
+        await loadScript(
+            'https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js',
+        );
+        await loadScript(
+            'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js',
+        );
+
         if (!(window as any).FaceMesh) {
             console.warn('FaceMesh not loaded from CDN');
+
             return;
         }
 
         faceMeshInstance = new (window as any).FaceMesh({
-            locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+            locateFile: (file: string) =>
+                `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
         });
 
         faceMeshInstance.setOptions({
             maxNumFaces: 1,
             refineLandmarks: false,
             minDetectionConfidence: 0.5,
-            minTrackingConfidence: 0.5
+            minTrackingConfidence: 0.5,
         });
 
         faceMeshInstance.onResults(onFaceMeshResults);
         faceMeshActive = true;
-        
+
         requestAnimationFrame(processFaceMeshFrame);
     } catch (err) {
         console.error('Failed to initialize client-side face mesh:', err);
@@ -156,10 +174,15 @@ const initFaceMesh = async () => {
 };
 
 const processFaceMeshFrame = async () => {
-    if (!faceMeshActive || !mediaStream.value || !videoRef.value || !faceMeshInstance) {
+    if (
+        !faceMeshActive ||
+        !mediaStream.value ||
+        !videoRef.value ||
+        !faceMeshInstance
+    ) {
         return;
     }
-    
+
     if (videoRef.value.readyState >= 2) {
         try {
             await faceMeshInstance.send({ image: videoRef.value });
@@ -167,7 +190,7 @@ const processFaceMeshFrame = async () => {
             console.error('FaceMesh frame send error:', err);
         }
     }
-    
+
     if (mediaStream.value && faceMeshActive) {
         requestAnimationFrame(processFaceMeshFrame);
     }
@@ -177,28 +200,34 @@ const onFaceMeshResults = (results: any) => {
     if (!faceMeshCanvasRef.value || !videoRef.value) {
         return;
     }
-    
+
     const canvas = faceMeshCanvasRef.value;
     const video = videoRef.value;
-    
+
     canvas.width = video.videoWidth || 640;
     canvas.height = video.videoHeight || 480;
-    
+
     const ctx = canvas.getContext('2d');
+
     if (!ctx) {
         return;
     }
-    
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
+
     if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
         for (const landmarks of results.multiFaceLandmarks) {
             const isProcessing = form.processing;
-            const dotColor = isProcessing ? 'rgba(59, 130, 246, 0.9)' : 'rgba(14, 165, 233, 0.85)';
-            const lineColor = isProcessing ? 'rgba(59, 130, 246, 0.35)' : 'rgba(14, 165, 233, 0.25)';
-            
+            const dotColor = isProcessing
+                ? 'rgba(59, 130, 246, 0.9)'
+                : 'rgba(14, 165, 233, 0.85)';
+            const lineColor = isProcessing
+                ? 'rgba(59, 130, 246, 0.35)'
+                : 'rgba(14, 165, 233, 0.25)';
+
             // Draw 468 landmark dots
             ctx.fillStyle = dotColor;
+
             for (const landmark of landmarks) {
                 const x = landmark.x * canvas.width;
                 const y = landmark.y * canvas.height;
@@ -206,49 +235,75 @@ const onFaceMeshResults = (results: any) => {
                 ctx.arc(x, y, 1.2, 0, 2 * Math.PI);
                 ctx.fill();
             }
-            
+
             // Draw connected face lines
             ctx.strokeStyle = lineColor;
             ctx.lineWidth = 0.55;
-            
+
             const drawPath = (indices: number[]) => {
                 ctx.beginPath();
+
                 for (let i = 0; i < indices.length; i++) {
                     const lm = landmarks[indices[i]];
-                    if (!lm) continue;
+
+                    if (!lm) {
+                        continue;
+                    }
+
                     const x = lm.x * canvas.width;
                     const y = lm.y * canvas.height;
+
                     if (i === 0) {
                         ctx.moveTo(x, y);
                     } else {
                         ctx.lineTo(x, y);
                     }
                 }
+
                 ctx.stroke();
             };
 
             // Outer oval
-            const faceOvalIndices = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109, 10];
+            const faceOvalIndices = [
+                10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397,
+                365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58,
+                132, 93, 234, 127, 162, 21, 54, 103, 67, 109, 10,
+            ];
             drawPath(faceOvalIndices);
-            
+
             // Left eye & eyebrow
-            const leftEyeIndices = [33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246, 33];
-            const leftEyebrowIndices = [70, 63, 105, 66, 107, 55, 65, 52, 53, 46];
+            const leftEyeIndices = [
+                33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159,
+                160, 161, 246, 33,
+            ];
+            const leftEyebrowIndices = [
+                70, 63, 105, 66, 107, 55, 65, 52, 53, 46,
+            ];
             drawPath(leftEyeIndices);
             drawPath(leftEyebrowIndices);
-            
+
             // Right eye & eyebrow
-            const rightEyeIndices = [263, 249, 390, 373, 374, 380, 381, 382, 362, 398, 384, 385, 386, 387, 388, 466, 263];
-            const rightEyebrowIndices = [300, 293, 334, 296, 336, 285, 295, 282, 283, 276];
+            const rightEyeIndices = [
+                263, 249, 390, 373, 374, 380, 381, 382, 362, 398, 384, 385, 386,
+                387, 388, 466, 263,
+            ];
+            const rightEyebrowIndices = [
+                300, 293, 334, 296, 336, 285, 295, 282, 283, 276,
+            ];
             drawPath(rightEyeIndices);
             drawPath(rightEyebrowIndices);
-            
+
             // Lips
-            const lipsIndices = [78, 95, 88, 178, 87, 14, 317, 402, 318, 324, 308, 415, 310, 311, 312, 13, 82, 81, 80, 191, 78];
+            const lipsIndices = [
+                78, 95, 88, 178, 87, 14, 317, 402, 318, 324, 308, 415, 310, 311,
+                312, 13, 82, 81, 80, 191, 78,
+            ];
             drawPath(lipsIndices);
-            
+
             // Nose bridge
-            const noseIndices = [168, 6, 197, 195, 5, 4, 1, 242, 94, 2, 328, 462];
+            const noseIndices = [
+                168, 6, 197, 195, 5, 4, 1, 242, 94, 2, 328, 462,
+            ];
             drawPath(noseIndices);
         }
     }
@@ -453,7 +508,7 @@ onUnmounted(() => {
                             <canvas
                                 v-show="!previewImage"
                                 ref="faceMeshCanvasRef"
-                                class="absolute inset-0 h-full w-full -scale-x-100 transform object-cover pointer-events-none z-10"
+                                class="pointer-events-none absolute inset-0 z-10 h-full w-full -scale-x-100 transform object-cover"
                             ></canvas>
                             <img
                                 v-if="previewImage"
