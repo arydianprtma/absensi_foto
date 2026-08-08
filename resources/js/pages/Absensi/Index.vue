@@ -66,14 +66,41 @@ const props = defineProps<{
     settings?: Settings;
 }>();
 
-const localLogs = ref<LogItem[]>([...(props.todayLogs || [])]);
+const localLogs = ref<LogItem[]>([]);
+const recentScansOrder = ref<string[]>([]);
+const recentScansMap = ref<Map<string, LogItem>>(new Map());
+
+const syncLogsList = () => {
+    const list: LogItem[] = [];
+    const addedNisns = new Set<string>();
+
+    // 1. Unshift recently scanned items in reverse-chronological order (newest first)
+    for (let i = recentScansOrder.value.length - 1; i >= 0; i--) {
+        const nisn = recentScansOrder.value[i];
+        const item = recentScansMap.value.get(nisn);
+        if (item && !addedNisns.has(nisn)) {
+            list.push(item);
+            addedNisns.add(nisn);
+        }
+    }
+
+    // 2. Append props.todayLogs for items not in recent scans
+    if (props.todayLogs && Array.isArray(props.todayLogs)) {
+        for (const log of props.todayLogs) {
+            if (!addedNisns.has(log.nisn)) {
+                list.push(log);
+                addedNisns.add(log.nisn);
+            }
+        }
+    }
+
+    localLogs.value = list;
+};
 
 watch(
     () => props.todayLogs,
-    (newLogs) => {
-        if (newLogs && Array.isArray(newLogs)) {
-            localLogs.value = [...newLogs];
-        }
+    () => {
+        syncLogsList();
     },
     { deep: true, immediate: true },
 );
@@ -110,11 +137,15 @@ const pushOrUpdateLocalLog = (data: any) => {
         ).toLowerCase(),
     };
 
-    // Filter out existing record and unshift to index 0 (top of the list instantly)
-    localLogs.value = [
-        newLogItem,
-        ...localLogs.value.filter((l) => l.nisn !== data.student.nisn),
-    ];
+    // Remove existing from order list, then push to end of order (so it becomes newest)
+    recentScansOrder.value = recentScansOrder.value.filter(
+        (n) => n !== data.student.nisn,
+    );
+    recentScansOrder.value.push(data.student.nisn);
+    recentScansMap.value.set(data.student.nisn, newLogItem);
+
+    // Sync to localLogs immediately!
+    syncLogsList();
 };
 
 const videoRef = ref<HTMLVideoElement | null>(null);
