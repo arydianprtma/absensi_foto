@@ -84,7 +84,7 @@ const printCard = () => {
             >
                 <!-- FRONT CARD (SISI DEPAN) -->
                 <div
-                    class="relative flex h-[53.9mm] min-h-[214px] w-[85.6mm] min-w-[340px] flex-col justify-between overflow-hidden rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-900 via-indigo-800 to-slate-900 p-4 text-white shadow-2xl select-none"
+                    class="card-item relative flex h-[53.9mm] min-h-[214px] w-[85.6mm] min-w-[340px] flex-col justify-between overflow-hidden rounded-2xl border border-indigo-500/40 bg-gradient-to-br from-indigo-900 via-indigo-800 to-slate-900 p-4 text-white select-none"
                 >
                     <!-- Background Accent Ornaments -->
                     <div
@@ -100,7 +100,7 @@ const printCard = () => {
                     >
                         <div class="flex items-center gap-2">
                             <div
-                                class="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500 text-xs font-black text-white shadow"
+                                class="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500 text-xs font-black text-white"
                             >
                                 AI
                             </div>
@@ -136,7 +136,7 @@ const printCard = () => {
                         <!-- Photo Frame -->
                         <div class="relative shrink-0">
                             <div
-                                class="h-24 w-20 overflow-hidden rounded-xl border-2 border-white/30 bg-slate-800 shadow-md"
+                                class="h-24 w-20 overflow-hidden rounded-xl border-2 border-white/30 bg-slate-800"
                             >
                                 <img
                                     v-if="student.photo_url"
@@ -216,7 +216,7 @@ const printCard = () => {
 
                 <!-- BACK CARD (SISI BELAKANG) -->
                 <div
-                    class="relative flex h-[53.9mm] min-h-[214px] w-[85.6mm] min-w-[340px] flex-col justify-between overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 p-4 text-white shadow-2xl select-none"
+                    class="card-item relative flex h-[53.9mm] min-h-[214px] w-[85.6mm] min-w-[340px] flex-col justify-between overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 p-4 text-white select-none"
                 >
                     <!-- Magnetic Stripe Sim -->
                     <div
@@ -265,14 +265,23 @@ const printCard = () => {
 
 <style>
 @media print {
+    @page {
+        size: A4 portrait;
+        margin: 10mm;
+    }
+
     * {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
         color-adjust: exact !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
     }
 
     body {
         background: #ffffff !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
 
     header,
@@ -284,12 +293,26 @@ const printCard = () => {
 
     .printable-card-area {
         display: flex !important;
-        flex-direction: row !important;
+        flex-direction: column !important;
         align-items: center !important;
-        justify-content: center !important;
+        justify-content: flex-start !important;
         gap: 1.5rem !important;
         padding: 0 !important;
-        margin: 2rem auto !important;
+        margin: 0 auto !important;
+        width: 100% !important;
+    }
+
+    .card-item {
+        width: 85.6mm !important;
+        height: 53.9mm !important;
+        min-width: 85.6mm !important;
+        min-height: 53.9mm !important;
+        max-width: 85.6mm !important;
+        max-height: 53.9mm !important;
+        box-shadow: none !important;
+        border-radius: 12px !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
     }
 }
 </style>
