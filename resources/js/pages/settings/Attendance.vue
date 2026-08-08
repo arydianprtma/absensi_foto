@@ -163,7 +163,7 @@ const submit = () => {
                                                 :key="'inStartH-' + h"
                                                 :value="h"
                                             >
-                                                Jam {{ h }}
+                                                {{ h }}
                                             </option>
                                         </select>
                                     </div>
@@ -181,7 +181,7 @@ const submit = () => {
                                                 :key="'inStartM-' + m"
                                                 :value="m"
                                             >
-                                                {{ m }} Menit
+                                                {{ m }}
                                             </option>
                                         </select>
                                     </div>
@@ -223,7 +223,7 @@ const submit = () => {
                                                 :key="'inEndH-' + h"
                                                 :value="h"
                                             >
-                                                Jam {{ h }}
+                                                {{ h }}
                                             </option>
                                         </select>
                                     </div>
@@ -241,7 +241,7 @@ const submit = () => {
                                                 :key="'inEndM-' + m"
                                                 :value="m"
                                             >
-                                                {{ m }} Menit
+                                                {{ m }}
                                             </option>
                                         </select>
                                     </div>
@@ -312,7 +312,7 @@ const submit = () => {
                                                 :key="'outStartH-' + h"
                                                 :value="h"
                                             >
-                                                Jam {{ h }}
+                                                {{ h }}
                                             </option>
                                         </select>
                                     </div>
@@ -330,7 +330,7 @@ const submit = () => {
                                                 :key="'outStartM-' + m"
                                                 :value="m"
                                             >
-                                                {{ m }} Menit
+                                                {{ m }}
                                             </option>
                                         </select>
                                     </div>
@@ -374,7 +374,7 @@ const submit = () => {
                                                 :key="'outEndH-' + h"
                                                 :value="h"
                                             >
-                                                Jam {{ h }}
+                                                {{ h }}
                                             </option>
                                         </select>
                                     </div>
@@ -392,7 +392,7 @@ const submit = () => {
                                                 :key="'outEndM-' + m"
                                                 :value="m"
                                             >
-                                                {{ m }} Menit
+                                                {{ m }}
                                             </option>
                                         </select>
                                     </div>

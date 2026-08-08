@@ -309,7 +309,7 @@ const executeDelete = () => {
                                             :key="'startH-' + h"
                                             :value="h"
                                         >
-                                            Jam {{ h }}
+                                            {{ h }}
                                         </option>
                                     </select>
                                 </div>
@@ -326,7 +326,7 @@ const executeDelete = () => {
                                             :key="'startM-' + m"
                                             :value="m"
                                         >
-                                            {{ m }} Menit
+                                            {{ m }}
                                         </option>
                                     </select>
                                 </div>
@@ -356,7 +356,7 @@ const executeDelete = () => {
                                             :key="'endH-' + h"
                                             :value="h"
                                         >
-                                            Jam {{ h }}
+                                            {{ h }}
                                         </option>
                                     </select>
                                 </div>
@@ -373,7 +373,7 @@ const executeDelete = () => {
                                             :key="'endM-' + m"
                                             :value="m"
                                         >
-                                            {{ m }} Menit
+                                            {{ m }}
                                         </option>
                                     </select>
                                 </div>
