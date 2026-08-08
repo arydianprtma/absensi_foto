@@ -299,16 +299,14 @@ const processRfidMapelScan = (rfidUid: string) => {
         (s: any) => s.rfid_uid === rfidUid,
     );
     if (!matchedStudent) {
-        const msg = `Kartu RFID (${rfidUid}) tidak terdaftar pada siswa di kelas ini!`;
+        const msg = `Kartu (${rfidUid}) tidak terdaftar pada siswa di kelas ini!`;
         scanStatusText.value = msg;
         speakGreeting(msg);
         return;
     }
 
     setStatusManual(matchedStudent.id, 'hadir');
-    speakGreeting(
-        `Presensi RFID berhasil. Selamat belajar ${matchedStudent.name}.`,
-    );
+    speakGreeting(`Presensi berhasil. Selamat belajar ${matchedStudent.name}.`);
 };
 
 onMounted(() => {

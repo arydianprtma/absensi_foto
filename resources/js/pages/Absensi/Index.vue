@@ -2175,7 +2175,7 @@ onUnmounted(() => {
                     class="space-y-2 rounded-2xl border border-rose-500/20 bg-white/5 p-4 text-center"
                 >
                     <p class="text-sm font-bold text-rose-300">
-                        Kartu RFID (UID: {{ rfidStudentPopup.rfid_uid }}) Belum
+                        Kartu (UID: {{ rfidStudentPopup.rfid_uid }}) Belum
                         Terdaftar
                     </p>
                     <p class="text-xs text-slate-400">

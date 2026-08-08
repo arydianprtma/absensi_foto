@@ -182,7 +182,7 @@ class AttendanceController extends Controller
         if (! $student) {
             return response()->json([
                 'success' => false,
-                'message' => "Kartu RFID ({$rfidUid}) belum terdaftar pada siswa manapun.",
+                'message' => "Kartu ({$rfidUid}) belum terdaftar pada siswa manapun.",
             ], 200);
         }
 
