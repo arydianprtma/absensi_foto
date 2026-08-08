@@ -18,11 +18,11 @@ const { isCurrentUrl } = useCurrentUrl();
 </script>
 
 <template>
-    <SidebarGroup class="space-y-1 px-3 py-2">
+    <SidebarGroup class="space-y-1.5 px-3 py-2">
         <SidebarGroupLabel
             class="mb-2 px-3 text-[10px] font-extrabold tracking-widest text-slate-400 uppercase dark:text-slate-500"
         >
-            Menu Utama
+            Menu Navigasi
         </SidebarGroupLabel>
         <SidebarMenu class="space-y-1">
             <SidebarMenuItem v-for="item in items" :key="item.title">
@@ -30,21 +30,21 @@ const { isCurrentUrl } = useCurrentUrl();
                     as-child
                     :is-active="isCurrentUrl(item.href)"
                     :tooltip="item.title"
-                    class="group relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-medium transition-all duration-150"
+                    class="group relative flex cursor-pointer items-center gap-3 rounded-2xl px-3.5 py-2.5 text-xs font-semibold transition-all duration-150"
                     :class="[
                         isCurrentUrl(item.href)
-                            ? 'bg-slate-900 font-semibold text-white shadow-sm dark:bg-slate-800 dark:text-white'
-                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-slate-100',
+                            ? 'bg-indigo-600 font-bold text-white shadow-md shadow-indigo-600/25 dark:bg-indigo-600 dark:text-white'
+                            : 'text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 dark:text-slate-300 dark:hover:bg-indigo-950/50 dark:hover:text-indigo-300',
                     ]"
                 >
                     <Link :href="item.href">
                         <component
                             :is="item.icon"
-                            class="h-4 w-4 shrink-0 transition-transform duration-150 group-hover:scale-105"
+                            class="h-4 shrink-0 transition-all duration-150 group-hover:scale-110"
                             :class="[
                                 isCurrentUrl(item.href)
                                     ? 'text-white'
-                                    : 'text-slate-400 group-hover:text-slate-700 dark:text-slate-500 dark:group-hover:text-slate-300',
+                                    : 'text-slate-500 group-hover:text-indigo-600 dark:text-slate-400 dark:group-hover:text-indigo-400',
                             ]"
                         />
                         <span class="truncate">{{ item.title }}</span>

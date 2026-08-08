@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
 import {
     Camera,
     Calendar,
@@ -9,7 +9,9 @@ import {
     Users,
     BookOpen,
     Bookmark,
+    UserCheck,
 } from '@lucide/vue';
+import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
@@ -24,7 +26,12 @@ import {
 } from '@/components/ui/sidebar';
 import type { NavItem } from '@/types';
 
-const mainNavItems: NavItem[] = [
+const page = usePage();
+const userRole = computed(
+    () => (page.props.auth as any)?.user?.role || 'admin',
+);
+
+const allNavItems: NavItem[] = [
     {
         title: 'Kamera Absensi AI',
         href: '/absensi',
@@ -44,6 +51,11 @@ const mainNavItems: NavItem[] = [
         title: 'Data Siswa & Wajah',
         href: '/students',
         icon: Users,
+    },
+    {
+        title: 'Kelola Akun Guru',
+        href: '/teachers',
+        icon: UserCheck,
     },
     {
         title: 'Jadwal Pelajaran',
@@ -66,6 +78,15 @@ const mainNavItems: NavItem[] = [
         icon: FileText,
     },
 ];
+
+const navItems = computed(() => {
+    if (userRole.value === 'teacher') {
+        return allNavItems.filter((item) =>
+            ['/absensi', '/absensi-mapel', '/schedules'].includes(item.href),
+        );
+    }
+    return allNavItems;
+});
 </script>
 
 <template>
@@ -87,7 +108,7 @@ const mainNavItems: NavItem[] = [
         </SidebarHeader>
 
         <SidebarContent class="py-2">
-            <NavMain :items="mainNavItems" />
+            <NavMain :items="navItems" />
         </SidebarContent>
 
         <SidebarFooter class="border-t border-sidebar-border pt-2">
