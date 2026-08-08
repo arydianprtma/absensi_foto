@@ -22,6 +22,7 @@ import {
     Volume2,
     VolumeX,
     X,
+    Cpu,
 } from '@lucide/vue';
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 
@@ -1071,8 +1072,86 @@ const onFaceMeshResults = (results: any) => {
     }
 };
 
+// RFID Reader HID Global Buffer Listener
+let rfidKeyBuffer = '';
+let rfidKeyTimeout: any = null;
+const rfidStudentPopup = ref<any>(null);
+const rfidModalOpen = ref(false);
+
+const handleRfidKeyPress = async (e: KeyboardEvent) => {
+    const activeEl = document.activeElement;
+    if (
+        activeEl &&
+        (activeEl.tagName === 'INPUT' ||
+            activeEl.tagName === 'TEXTAREA' ||
+            activeEl.tagName === 'SELECT')
+    ) {
+        return;
+    }
+
+    if (e.key === 'Enter') {
+        if (rfidKeyBuffer.length >= 4) {
+            const uid = rfidKeyBuffer.trim();
+            rfidKeyBuffer = '';
+            await processRfidScan(uid);
+        }
+        rfidKeyBuffer = '';
+        return;
+    }
+
+    if (e.key.length === 1) {
+        rfidKeyBuffer += e.key;
+        if (rfidKeyTimeout) clearTimeout(rfidKeyTimeout);
+        rfidKeyTimeout = window.setTimeout(() => {
+            rfidKeyBuffer = '';
+        }, 500);
+    }
+};
+
+const processRfidScan = async (rfidUid: string) => {
+    try {
+        const response = await fetch('/absensi/verify-rfid', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN':
+                    (
+                        document.querySelector(
+                            'meta[name="csrf-token"]',
+                        ) as HTMLMetaElement
+                    )?.content || '',
+                Accept: 'application/json',
+            },
+            body: JSON.stringify({ rfid_uid: rfidUid }),
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            rfidStudentPopup.value = {
+                student: data.student,
+                attendance: data.attendance,
+                message: data.message,
+            };
+            rfidModalOpen.value = true;
+            playTtsAudio(
+                `Terima kasih ${data.student.name}, presensi berhasil!`,
+            );
+            router.reload({ only: ['todayLogs'] });
+
+            setTimeout(() => {
+                rfidModalOpen.value = false;
+            }, 4500);
+        } else {
+            alert(data.message || 'Kartu RFID tidak terdaftar!');
+        }
+    } catch (err) {
+        console.error('RFID processing error:', err);
+    }
+};
+
 onMounted(() => {
     startCamera();
+    window.addEventListener('keydown', handleRfidKeyPress);
 
     // Load pending bypasses from localStorage
     const saved = localStorage.getItem('pending_bypasses');
@@ -1088,6 +1167,7 @@ onMounted(() => {
 
 onUnmounted(() => {
     stopCamera();
+    window.removeEventListener('keydown', handleRfidKeyPress);
 
     if (challengeTimer) {
         clearInterval(challengeTimer);
@@ -1779,6 +1859,135 @@ onUnmounted(() => {
                             Konfirmasi
                         </button>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- INSTANT RFID DIGITAL STUDENT ID CARD POPUP MODAL -->
+        <div
+            v-if="rfidModalOpen && rfidStudentPopup"
+            class="fixed inset-0 z-50 flex animate-in items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md duration-200 fade-in"
+        >
+            <div
+                class="relative w-full max-w-lg space-y-6 overflow-hidden rounded-3xl border border-indigo-500/30 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-6 font-sans text-white shadow-2xl"
+            >
+                <!-- Close Button -->
+                <button
+                    @click="rfidModalOpen = false"
+                    class="absolute top-4 right-4 rounded-full bg-white/10 p-1 text-slate-400 transition hover:text-white"
+                >
+                    <X class="h-5 w-5" />
+                </button>
+
+                <!-- Header Badge -->
+                <div class="flex items-center gap-3">
+                    <div
+                        class="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-500/30"
+                    >
+                        <Cpu class="h-5 w-5 text-amber-300" />
+                    </div>
+                    <div>
+                        <span
+                            class="inline-block rounded-full border border-emerald-500/30 bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-emerald-300 uppercase"
+                        >
+                            PRESENSI TAP KARTU RFID BERHASIL
+                        </span>
+                        <h3 class="text-lg font-black text-white">
+                            KARTU TANDA PENGENAL SISWA
+                        </h3>
+                    </div>
+                </div>
+
+                <!-- Student Profile Body -->
+                <div
+                    class="flex flex-col items-center gap-5 rounded-2xl border border-white/10 bg-white/5 p-4 sm:flex-row sm:items-start"
+                >
+                    <!-- Student Photo -->
+                    <div class="relative shrink-0">
+                        <div
+                            class="h-32 w-24 overflow-hidden rounded-2xl border-2 border-indigo-400/40 bg-slate-800 shadow-xl"
+                        >
+                            <img
+                                v-if="rfidStudentPopup.student.photo_url"
+                                :src="rfidStudentPopup.student.photo_url"
+                                :alt="rfidStudentPopup.student.name"
+                                class="h-full w-full object-cover"
+                            />
+                            <div
+                                v-else
+                                class="flex h-full w-full items-center justify-center text-xs font-bold text-slate-500"
+                            >
+                                NO PHOTO
+                            </div>
+                        </div>
+                        <div
+                            class="absolute -right-2 -bottom-2 flex h-7 w-7 items-center justify-center rounded-full border-2 border-slate-900 bg-emerald-500 text-white shadow-md"
+                        >
+                            <CheckCircle2 class="h-4 w-4" />
+                        </div>
+                    </div>
+
+                    <!-- Student Info Details -->
+                    <div
+                        class="space-y-2 overflow-hidden text-center sm:text-left"
+                    >
+                        <div
+                            class="inline-block rounded-lg border border-indigo-400/30 bg-indigo-500/30 px-2.5 py-0.5 text-xs font-black text-indigo-200"
+                        >
+                            KELAS: {{ rfidStudentPopup.student.class_name }}
+                        </div>
+                        <h2
+                            class="truncate text-xl font-black tracking-tight text-white uppercase"
+                        >
+                            {{ rfidStudentPopup.student.name }}
+                        </h2>
+                        <div
+                            class="space-y-0.5 font-mono text-xs text-indigo-200"
+                        >
+                            <div>
+                                NISN:
+                                <strong class="text-white">{{
+                                    rfidStudentPopup.student.nisn
+                                }}</strong>
+                            </div>
+                            <div v-if="rfidStudentPopup.student.nis">
+                                NIS:
+                                <strong class="text-white">{{
+                                    rfidStudentPopup.student.nis
+                                }}</strong>
+                            </div>
+                        </div>
+                        <div
+                            v-if="rfidStudentPopup.student.school_origin"
+                            class="truncate text-xs text-indigo-200/80"
+                        >
+                            Asal Sekolah:
+                            <strong class="text-white">{{
+                                rfidStudentPopup.student.school_origin
+                            }}</strong>
+                        </div>
+                        <div
+                            v-if="rfidStudentPopup.student.address"
+                            class="truncate text-xs text-indigo-200/80"
+                        >
+                            Alamat:
+                            <strong class="text-white">{{
+                                rfidStudentPopup.student.address
+                            }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attendance Notification Banner -->
+                <div
+                    class="flex items-center justify-between rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs"
+                >
+                    <span class="font-bold text-emerald-300">{{
+                        rfidStudentPopup.message
+                    }}</span>
+                    <span class="font-mono font-bold text-amber-400"
+                        >UID: {{ rfidStudentPopup.student.rfid_uid }}</span
+                    >
                 </div>
             </div>
         </div>

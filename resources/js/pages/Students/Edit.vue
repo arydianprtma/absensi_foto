@@ -16,8 +16,12 @@ import AppLayout from '@/layouts/AppLayout.vue';
 interface Student {
     id: number;
     nisn: string;
+    rfid_uid: string | null;
+    nis: string | null;
     name: string;
     class_name: string;
+    address: string | null;
+    school_origin: string | null;
     photo_url: string | null;
     has_face_registered: boolean;
 }
@@ -40,8 +44,12 @@ const cameraError = ref<string | null>(null);
 
 const form = useForm({
     nisn: props.student.nisn,
+    rfid_uid: props.student.rfid_uid || '',
+    nis: props.student.nis || '',
     name: props.student.name,
     class_name: props.student.class_name,
+    address: props.student.address || '',
+    school_origin: props.student.school_origin || '',
     photo_base64: '',
 });
 
@@ -403,7 +411,41 @@ onUnmounted(() => {
                         <label
                             class="mb-1.5 block text-xs font-bold tracking-wider text-slate-700 uppercase dark:text-slate-300"
                         >
-                            Nama Lengkap *
+                            NIS Sekolah
+                        </label>
+                        <input
+                            v-model="form.nis"
+                            type="text"
+                            placeholder="Contoh: 124131"
+                            class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        />
+                    </div>
+
+                    <div>
+                        <label
+                            class="mb-1.5 block text-xs font-bold tracking-wider text-slate-700 uppercase dark:text-slate-300"
+                        >
+                            Nomor Kartu RFID (UID)
+                        </label>
+                        <input
+                            v-model="form.rfid_uid"
+                            type="text"
+                            placeholder="Tempelkan kartu ke reader (0828867589)"
+                            class="w-full rounded-xl border border-indigo-300 bg-indigo-50/50 px-4 py-2.5 font-mono text-sm font-bold text-indigo-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-200"
+                        />
+                        <p
+                            v-if="form.errors.rfid_uid"
+                            class="mt-1 text-xs font-medium text-rose-500"
+                        >
+                            {{ form.errors.rfid_uid }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <label
+                            class="mb-1.5 block text-xs font-bold tracking-wider text-slate-700 uppercase dark:text-slate-300"
+                        >
+                            Nama Lengkap Siswa *
                         </label>
                         <input
                             v-model="form.name"
@@ -437,6 +479,34 @@ onUnmounted(() => {
                         >
                             {{ form.errors.class_name }}
                         </p>
+                    </div>
+
+                    <div>
+                        <label
+                            class="mb-1.5 block text-xs font-bold tracking-wider text-slate-700 uppercase dark:text-slate-300"
+                        >
+                            Asal Sekolah (SMP/MTs)
+                        </label>
+                        <input
+                            v-model="form.school_origin"
+                            type="text"
+                            placeholder="Contoh: SMP Negeri 1 Jakarta"
+                            class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        />
+                    </div>
+
+                    <div class="md:col-span-3">
+                        <label
+                            class="mb-1.5 block text-xs font-bold tracking-wider text-slate-700 uppercase dark:text-slate-300"
+                        >
+                            Alamat Rumah Lengkap
+                        </label>
+                        <textarea
+                            v-model="form.address"
+                            rows="2"
+                            placeholder="Contoh: Jl. Merdeka No. 12, Kel. Menteng, Jakarta Pusat"
+                            class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        ></textarea>
                     </div>
                 </div>
 

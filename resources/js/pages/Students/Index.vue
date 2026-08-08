@@ -9,6 +9,7 @@ import {
     Users,
     TriangleAlert,
     X,
+    Printer,
 } from '@lucide/vue';
 import { ref } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -186,7 +187,13 @@ const executeDeleteStudent = () => {
                                 <td
                                     class="border-b border-slate-100 px-4 py-3 font-mono font-bold text-indigo-600 dark:border-slate-800/60 dark:text-indigo-400"
                                 >
-                                    {{ st.nisn }}
+                                    <div>{{ st.nisn }}</div>
+                                    <div
+                                        v-if="st.rfid_uid"
+                                        class="font-mono text-[10px] text-amber-600 dark:text-amber-400"
+                                    >
+                                        RFID: {{ st.rfid_uid }}
+                                    </div>
                                 </td>
                                 <td
                                     class="border-b border-slate-100 px-4 py-3 font-semibold dark:border-slate-800/60"
@@ -222,6 +229,13 @@ const executeDeleteStudent = () => {
                                     <div
                                         class="flex items-center justify-end gap-2"
                                     >
+                                        <Link
+                                            :href="`/students/${st.id}/card`"
+                                            class="rounded-lg bg-emerald-50 p-1.5 text-emerald-600 transition hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400"
+                                            title="Cetak Kartu Pelajar RFID"
+                                        >
+                                            <Printer class="h-4 w-4" />
+                                        </Link>
                                         <Link
                                             :href="`/students/${st.id}/edit`"
                                             class="rounded-lg bg-indigo-50 p-1.5 text-indigo-600 transition hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400"

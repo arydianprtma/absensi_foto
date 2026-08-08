@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [AttendanceController::class, 'index'])->name('home');
 Route::get('/absensi', [AttendanceController::class, 'index'])->name('absensi.index');
 Route::post('/absensi/verifikasi', [AttendanceController::class, 'verify'])->name('absensi.verify');
+Route::post('/absensi/verify-rfid', [AttendanceController::class, 'verifyRfid'])->name('absensi.verify_rfid');
 Route::post('/absensi/verifikasi-otomatis', [AttendanceController::class, 'autoVerify'])->name('absensi.auto_verify');
 Route::post('/absensi/bypass-satpam', [AttendanceController::class, 'bypassSatpam'])->name('absensi.bypass_satpam');
 Route::get('/absensi/tts-audio', [AttendanceController::class, 'ttsAudio'])->name('absensi.tts_audio');
@@ -25,6 +26,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/students', [StudentController::class, 'index'])->name('students.index');
     Route::get('/students/create', [StudentController::class, 'create'])->name('students.create');
     Route::post('/students', [StudentController::class, 'store'])->name('students.store');
+    Route::get('/students/{student}/card', [StudentController::class, 'card'])->name('students.card');
     Route::get('/students/{student}/edit', [StudentController::class, 'edit'])->name('students.edit');
     Route::put('/students/{student}', [StudentController::class, 'update'])->name('students.update');
     Route::delete('/students/{student}', [StudentController::class, 'destroy'])->name('students.destroy');

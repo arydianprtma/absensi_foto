@@ -30,6 +30,8 @@ interface ScheduleItem {
 interface StudentItem {
     id: number;
     nisn: string;
+    rfid_uid?: string | null;
+    nis?: string | null;
     name: string;
     class_name: string;
     photo_url: string | null;
@@ -232,12 +234,65 @@ const setStatusManual = (studentId: number, statusValue: string) => {
     });
 };
 
+// RFID Reader HID Global Buffer Listener
+let rfidKeyBuffer = '';
+let rfidKeyTimeout: any = null;
+
+const handleRfidKeyPress = (e: KeyboardEvent) => {
+    const activeEl = document.activeElement;
+    if (
+        activeEl &&
+        (activeEl.tagName === 'INPUT' ||
+            activeEl.tagName === 'TEXTAREA' ||
+            activeEl.tagName === 'SELECT')
+    ) {
+        return;
+    }
+
+    if (e.key === 'Enter') {
+        if (rfidKeyBuffer.length >= 4) {
+            const uid = rfidKeyBuffer.trim();
+            rfidKeyBuffer = '';
+            processRfidMapelScan(uid);
+        }
+        rfidKeyBuffer = '';
+        return;
+    }
+
+    if (e.key.length === 1) {
+        rfidKeyBuffer += e.key;
+        if (rfidKeyTimeout) clearTimeout(rfidKeyTimeout);
+        rfidKeyTimeout = window.setTimeout(() => {
+            rfidKeyBuffer = '';
+        }, 500);
+    }
+};
+
+const processRfidMapelScan = (rfidUid: string) => {
+    const matchedStudent = props.students.find(
+        (s: any) => s.rfid_uid === rfidUid,
+    );
+    if (!matchedStudent) {
+        alert(
+            `Kartu RFID (${rfidUid}) tidak terdaftar pada siswa di kelas ini!`,
+        );
+        return;
+    }
+
+    setStatusManual(matchedStudent.id, 'hadir');
+    speakGreeting(
+        `Presensi RFID berhasil. Selamat belajar ${matchedStudent.name}.`,
+    );
+};
+
 onMounted(() => {
     startCamera();
+    window.addEventListener('keydown', handleRfidKeyPress);
 });
 
 onUnmounted(() => {
     stopCamera();
+    window.removeEventListener('keydown', handleRfidKeyPress);
 });
 </script>
 

@@ -168,9 +168,50 @@ class AttendanceController extends Controller
     }
 
     /**
+     * Handle RFID Card Verification & Instant Smart ID Card Attendance.
+     */
+    public function verifyRfid(Request $request): JsonResponse
+    {
+        $request->validate([
+            'rfid_uid' => 'required|string',
+        ]);
+
+        $rfidUid = trim($request->rfid_uid);
+        $student = Student::where('rfid_uid', $rfidUid)->first();
+
+        if (! $student) {
+            return response()->json([
+                'success' => false,
+                'message' => "Kartu RFID ({$rfidUid}) belum terdaftar pada siswa manapun.",
+            ], 200);
+        }
+
+        // Process Attendance with 1.0 (100% RFID Match)
+        $processResponse = $this->processAttendance($student, null, 1.0);
+        $processData = $processResponse->getData(true);
+
+        return response()->json([
+            'success' => $processData['success'] ?? true,
+            'message' => $processData['message'] ?? 'Presensi RFID berhasil!',
+            'student' => [
+                'id' => $student->id,
+                'nisn' => $student->nisn,
+                'nis' => $student->nis,
+                'name' => $student->name,
+                'class_name' => $student->class_name,
+                'address' => $student->address,
+                'school_origin' => $student->school_origin,
+                'rfid_uid' => $student->rfid_uid,
+                'photo_url' => $student->photo_path ? Storage::url($student->photo_path) : null,
+            ],
+            'attendance' => $processData['attendance'] ?? null,
+        ]);
+    }
+
+    /**
      * Shared logic to record attendance (Masuk / Pulang) for a recognized student.
      */
-    protected function processAttendance(Student $student, string $imageBase64, float $similarity = 0.0): JsonResponse
+    protected function processAttendance(Student $student, ?string $imageBase64 = null, float $similarity = 0.0): JsonResponse
     {
         $now = Carbon::now('Asia/Jakarta');
         $today = $now->format('Y-m-d');
@@ -229,12 +270,15 @@ class AttendanceController extends Controller
                 ]);
             }
 
-            // Save snapshot
-            $base64Data = preg_replace('#^data:image/\w+;base64,#i', '', $imageBase64);
-            $imageBytes = base64_decode($base64Data);
-            $studentFolder = Str::slug($student->name, '_');
-            $fileName = 'attendances/'.$today.'/checkout/'.$studentFolder.'/'.time().'.jpg';
-            Storage::disk('public')->put($fileName, $imageBytes);
+            // Save snapshot if image provided, else fallback to student reference photo
+            $fileName = $student->photo_path;
+            if (! empty($imageBase64)) {
+                $base64Data = preg_replace('#^data:image/\w+;base64,#i', '', $imageBase64);
+                $imageBytes = base64_decode($base64Data);
+                $studentFolder = Str::slug($student->name, '_');
+                $fileName = 'attendances/'.$today.'/checkout/'.$studentFolder.'/'.time().'.jpg';
+                Storage::disk('public')->put($fileName, $imageBytes);
+            }
 
             $existingAttendance->update([
                 'check_out_time' => $currentTime,
@@ -258,7 +302,7 @@ class AttendanceController extends Controller
                     'check_out_time' => $currentTime,
                     'status' => ucfirst($attendance->status),
                     'similarity_percentage' => round($similarity * 100, 1),
-                    'photo_url' => Storage::url($fileName),
+                    'photo_url' => $fileName ? Storage::url($fileName) : null,
                 ],
             ]);
         }
@@ -282,13 +326,15 @@ class AttendanceController extends Controller
             ]);
         }
 
-        // Save attendance photo snapshot
-        $base64Data = preg_replace('#^data:image/\w+;base64,#i', '', $imageBase64);
-        $imageBytes = base64_decode($base64Data);
-        $studentFolder = Str::slug($student->name, '_');
-        $fileName = 'attendances/'.$today.'/checkin/'.$studentFolder.'/'.time().'.jpg';
-
-        Storage::disk('public')->put($fileName, $imageBytes);
+        // Save attendance photo snapshot if image provided, else fallback to reference photo
+        $fileName = $student->photo_path;
+        if (! empty($imageBase64)) {
+            $base64Data = preg_replace('#^data:image/\w+;base64,#i', '', $imageBase64);
+            $imageBytes = base64_decode($base64Data);
+            $studentFolder = Str::slug($student->name, '_');
+            $fileName = 'attendances/'.$today.'/checkin/'.$studentFolder.'/'.time().'.jpg';
+            Storage::disk('public')->put($fileName, $imageBytes);
+        }
 
         $lateThreshold = substr((string) $settings->check_in_end, 0, 5);
         $status = $now->format('H:i') > $lateThreshold ? 'terlambat' : 'hadir';

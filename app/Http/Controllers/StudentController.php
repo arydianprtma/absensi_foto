@@ -24,8 +24,12 @@ class StudentController extends Controller
                 return [
                     'id' => $student->id,
                     'nisn' => $student->nisn,
+                    'rfid_uid' => $student->rfid_uid,
+                    'nis' => $student->nis,
                     'name' => $student->name,
                     'class_name' => $student->class_name,
+                    'address' => $student->address,
+                    'school_origin' => $student->school_origin,
                     'photo_url' => $student->photo_path ? Storage::url($student->photo_path) : null,
                     'has_face_registered' => ! empty($student->face_embedding),
                     'total_attendances' => $student->attendances_count,
@@ -47,8 +51,12 @@ class StudentController extends Controller
     {
         $validated = $request->validate([
             'nisn' => 'required|string|unique:students,nisn',
+            'rfid_uid' => 'nullable|string|unique:students,rfid_uid',
+            'nis' => 'nullable|string|max:50',
             'name' => 'required|string|max:255',
             'class_name' => 'required|string|max:100',
+            'address' => 'nullable|string|max:500',
+            'school_origin' => 'nullable|string|max:255',
             'photo_base64' => 'required|string',
         ]);
 
@@ -70,13 +78,17 @@ class StudentController extends Controller
 
         Student::create([
             'nisn' => $validated['nisn'],
+            'rfid_uid' => $validated['rfid_uid'] ?? null,
+            'nis' => $validated['nis'] ?? null,
             'name' => $validated['name'],
             'class_name' => $validated['class_name'],
+            'address' => $validated['address'] ?? null,
+            'school_origin' => $validated['school_origin'] ?? null,
             'photo_path' => $fileName,
             'face_embedding' => $extractResult['embedding'],
         ]);
 
-        return redirect()->route('students.index')->with('success', 'Siswa dan data wajah berhasil didaftarkan!');
+        return redirect()->route('students.index')->with('success', 'Siswa dan Kartu RFID berhasil didaftarkan!');
     }
 
     public function edit(Student $student): Response
@@ -85,8 +97,12 @@ class StudentController extends Controller
             'student' => [
                 'id' => $student->id,
                 'nisn' => $student->nisn,
+                'rfid_uid' => $student->rfid_uid,
+                'nis' => $student->nis,
                 'name' => $student->name,
                 'class_name' => $student->class_name,
+                'address' => $student->address,
+                'school_origin' => $student->school_origin,
                 'photo_url' => $student->photo_path ? Storage::url($student->photo_path) : null,
                 'has_face_registered' => ! empty($student->face_embedding),
             ],
@@ -97,15 +113,23 @@ class StudentController extends Controller
     {
         $validated = $request->validate([
             'nisn' => 'required|string|unique:students,nisn,'.$student->id,
+            'rfid_uid' => 'nullable|string|unique:students,rfid_uid,'.$student->id,
+            'nis' => 'nullable|string|max:50',
             'name' => 'required|string|max:255',
             'class_name' => 'required|string|max:100',
+            'address' => 'nullable|string|max:500',
+            'school_origin' => 'nullable|string|max:255',
             'photo_base64' => 'nullable|string',
         ]);
 
         $updateData = [
             'nisn' => $validated['nisn'],
+            'rfid_uid' => $validated['rfid_uid'] ?? null,
+            'nis' => $validated['nis'] ?? null,
             'name' => $validated['name'],
             'class_name' => $validated['class_name'],
+            'address' => $validated['address'] ?? null,
+            'school_origin' => $validated['school_origin'] ?? null,
         ];
 
         // If a new face photo is provided, extract embedding and replace old photo
@@ -135,7 +159,7 @@ class StudentController extends Controller
 
         $student->update($updateData);
 
-        return redirect()->route('students.index')->with('success', 'Data siswa berhasil diperbarui!');
+        return redirect()->route('students.index')->with('success', 'Data siswa & RFID berhasil diperbarui!');
     }
 
     public function destroy(Student $student): RedirectResponse
@@ -147,5 +171,25 @@ class StudentController extends Controller
         $student->delete();
 
         return redirect()->route('students.index')->with('success', 'Data siswa berhasil dihapus.');
+    }
+
+    /**
+     * Printable Official RFID Student ID Card View.
+     */
+    public function card(Student $student): Response
+    {
+        return Inertia::render('Students/Card', [
+            'student' => [
+                'id' => $student->id,
+                'nisn' => $student->nisn,
+                'rfid_uid' => $student->rfid_uid,
+                'nis' => $student->nis,
+                'name' => $student->name,
+                'class_name' => $student->class_name,
+                'address' => $student->address,
+                'school_origin' => $student->school_origin,
+                'photo_url' => $student->photo_path ? Storage::url($student->photo_path) : null,
+            ],
+        ]);
     }
 }

@@ -74,6 +74,8 @@ class SubjectAttendanceController extends Controller
                 return [
                     'id' => $s->id,
                     'nisn' => $s->nisn,
+                    'rfid_uid' => $s->rfid_uid,
+                    'nis' => $s->nis,
                     'name' => $s->name,
                     'class_name' => $s->class_name,
                     'photo_url' => $s->photo_path ? Storage::url($s->photo_path) : null,
