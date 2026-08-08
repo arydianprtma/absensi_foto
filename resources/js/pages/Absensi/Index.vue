@@ -1126,24 +1126,29 @@ const processRfidScan = async (rfidUid: string) => {
         });
 
         const data = await response.json();
-        if (data.success) {
-            rfidStudentPopup.value = {
-                student: data.student,
-                attendance: data.attendance,
-                message: data.message,
-            };
-            rfidModalOpen.value = true;
-            playTtsAudio(
-                `Terima kasih ${data.student.name}, presensi berhasil!`,
-            );
-            router.reload({ only: ['todayLogs'] });
 
-            setTimeout(() => {
-                rfidModalOpen.value = false;
-            }, 4500);
-        } else {
-            alert(data.message || 'Kartu RFID tidak terdaftar!');
+        rfidStudentPopup.value = {
+            student: data.student || null,
+            attendance: data.attendance || null,
+            message: data.message || 'Verifikasi RFID diproses.',
+            success: data.success ?? false,
+            already_attended: data.already_attended ?? false,
+            not_checked_in: data.not_checked_in ?? false,
+            rfid_uid: rfidUid,
+        };
+        rfidModalOpen.value = true;
+
+        if (data.message) {
+            playTtsAudio(data.message);
         }
+
+        if (data.success) {
+            router.reload({ only: ['todayLogs'] });
+        }
+
+        setTimeout(() => {
+            rfidModalOpen.value = false;
+        }, 5500);
     } catch (err) {
         console.error('RFID processing error:', err);
     }
@@ -1869,7 +1874,12 @@ onUnmounted(() => {
             class="fixed inset-0 z-50 flex animate-in items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md duration-200 fade-in"
         >
             <div
-                class="relative w-full max-w-lg space-y-6 overflow-hidden rounded-3xl border border-indigo-500/30 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-6 font-sans text-white shadow-2xl"
+                :class="[
+                    'relative w-full max-w-lg space-y-6 overflow-hidden rounded-3xl border p-6 font-sans text-white shadow-2xl',
+                    rfidStudentPopup.success
+                        ? 'border-indigo-500/30 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900'
+                        : 'border-rose-500/30 bg-gradient-to-br from-slate-900 via-rose-950/70 to-slate-900',
+                ]"
             >
                 <!-- Close Button -->
                 <button
@@ -1882,15 +1892,27 @@ onUnmounted(() => {
                 <!-- Header Badge -->
                 <div class="flex items-center gap-3">
                     <div
-                        class="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-500/30"
+                        :class="[
+                            'flex h-10 w-10 items-center justify-center rounded-2xl shadow-lg',
+                            rfidStudentPopup.success
+                                ? 'bg-indigo-600 shadow-indigo-500/30'
+                                : 'bg-rose-600 shadow-rose-500/30',
+                        ]"
                     >
                         <Cpu class="h-5 w-5 text-amber-300" />
                     </div>
                     <div>
                         <span
+                            v-if="rfidStudentPopup.success"
                             class="inline-block rounded-full border border-emerald-500/30 bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-emerald-300 uppercase"
                         >
                             PRESENSI TAP KARTU RFID BERHASIL
+                        </span>
+                        <span
+                            v-else
+                            class="inline-block rounded-full border border-rose-500/30 bg-rose-500/20 px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-rose-300 uppercase"
+                        >
+                            PERINGATAN ABSENSI RFID
                         </span>
                         <h3 class="text-lg font-black text-white">
                             KARTU TANDA PENGENAL SISWA
@@ -1898,8 +1920,9 @@ onUnmounted(() => {
                     </div>
                 </div>
 
-                <!-- Student Profile Body -->
+                <!-- Student Profile Body (If Student Exists) -->
                 <div
+                    v-if="rfidStudentPopup.student"
                     class="flex flex-col items-center gap-5 rounded-2xl border border-white/10 bg-white/5 p-4 sm:flex-row sm:items-start"
                 >
                     <!-- Student Photo -->
@@ -1921,9 +1944,18 @@ onUnmounted(() => {
                             </div>
                         </div>
                         <div
-                            class="absolute -right-2 -bottom-2 flex h-7 w-7 items-center justify-center rounded-full border-2 border-slate-900 bg-emerald-500 text-white shadow-md"
+                            :class="[
+                                'absolute -right-2 -bottom-2 flex h-7 w-7 items-center justify-center rounded-full border-2 border-slate-900 text-white shadow-md',
+                                rfidStudentPopup.success
+                                    ? 'bg-emerald-500'
+                                    : 'bg-rose-500',
+                            ]"
                         >
-                            <CheckCircle2 class="h-4 w-4" />
+                            <CheckCircle2
+                                v-if="rfidStudentPopup.success"
+                                class="h-4 w-4"
+                            />
+                            <AlertTriangle v-else class="h-4 w-4" />
                         </div>
                     </div>
 
@@ -1978,15 +2010,35 @@ onUnmounted(() => {
                     </div>
                 </div>
 
+                <!-- Unregistered Card Body -->
+                <div
+                    v-else
+                    class="space-y-2 rounded-2xl border border-rose-500/20 bg-white/5 p-4 text-center"
+                >
+                    <p class="text-sm font-bold text-rose-300">
+                        Kartu RFID (UID: {{ rfidStudentPopup.rfid_uid }}) Belum
+                        Terdaftar
+                    </p>
+                    <p class="text-xs text-slate-400">
+                        Hubungi Petugas Tata Usaha atau Admin Sekolah untuk
+                        menghubungkan kartu ini dengan profil siswa.
+                    </p>
+                </div>
+
                 <!-- Attendance Notification Banner -->
                 <div
-                    class="flex items-center justify-between rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs"
+                    :class="[
+                        'flex items-center justify-between rounded-xl border p-3.5 text-xs font-semibold',
+                        rfidStudentPopup.success
+                            ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+                            : 'border-rose-500/30 bg-rose-500/10 text-rose-300',
+                    ]"
                 >
-                    <span class="font-bold text-emerald-300">{{
+                    <span class="leading-snug">{{
                         rfidStudentPopup.message
                     }}</span>
-                    <span class="font-mono font-bold text-amber-400"
-                        >UID: {{ rfidStudentPopup.student.rfid_uid }}</span
+                    <span class="shrink-0 font-mono font-bold text-amber-400"
+                        >UID: {{ rfidStudentPopup.rfid_uid }}</span
                     >
                 </div>
             </div>

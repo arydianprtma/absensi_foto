@@ -273,9 +273,9 @@ const processRfidMapelScan = (rfidUid: string) => {
         (s: any) => s.rfid_uid === rfidUid,
     );
     if (!matchedStudent) {
-        alert(
-            `Kartu RFID (${rfidUid}) tidak terdaftar pada siswa di kelas ini!`,
-        );
+        const msg = `Kartu RFID (${rfidUid}) tidak terdaftar pada siswa di kelas ini!`;
+        scanStatusText.value = msg;
+        speakGreeting(msg);
         return;
     }
 
