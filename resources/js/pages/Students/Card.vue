@@ -80,7 +80,7 @@ const printCard = () => {
 
             <!-- Card Printable Container -->
             <div
-                class="flex flex-col items-center justify-center gap-8 py-6 md:flex-row"
+                class="printable-card-area flex flex-col items-center justify-center gap-8 py-6 md:flex-row"
             >
                 <!-- FRONT CARD (SISI DEPAN) -->
                 <div
@@ -265,14 +265,31 @@ const printCard = () => {
 
 <style>
 @media print {
-    body * {
-        visibility: hidden;
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
     }
+
+    body {
+        background: #ffffff !important;
+    }
+
+    header,
+    nav,
+    aside,
     .print\:hidden {
         display: none !important;
     }
-    .min-w-\[340px\] {
-        visibility: visible;
+
+    .printable-card-area {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 1.5rem !important;
+        padding: 0 !important;
+        margin: 2rem auto !important;
     }
 }
 </style>
