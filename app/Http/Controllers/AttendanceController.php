@@ -48,7 +48,7 @@ class AttendanceController extends Controller
         $today = Carbon::now('Asia/Jakarta')->format('Y-m-d');
         $todayLogs = Attendance::with('student')
             ->where('date', $today)
-            ->latest('check_in_time')
+            ->latest('updated_at')
             ->get()
             ->map(function ($att) {
                 return [

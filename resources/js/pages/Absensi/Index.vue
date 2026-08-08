@@ -71,52 +71,64 @@ const localLogs = ref<LogItem[]>([...(props.todayLogs || [])]);
 watch(
     () => props.todayLogs,
     (newLogs) => {
-        if (newLogs) {
+        if (!newLogs || !Array.isArray(newLogs)) return;
+
+        if (localLogs.value.length === 0) {
             localLogs.value = [...newLogs];
+            return;
         }
+
+        const localNisns = new Set(localLogs.value.map((l) => l.nisn));
+        const missingFromLocal = newLogs.filter((l) => !localNisns.has(l.nisn));
+        const serverMap = new Map(newLogs.map((l) => [l.nisn, l]));
+
+        const updatedLocal = localLogs.value.map((localItem) => {
+            const serverItem = serverMap.get(localItem.nisn);
+            return serverItem ? { ...serverItem, ...localItem } : localItem;
+        });
+
+        localLogs.value = [...updatedLocal, ...missingFromLocal];
     },
-    { deep: true, immediate: true },
+    { deep: true },
 );
 
 const pushOrUpdateLocalLog = (data: any) => {
     if (!data || !data.student) return;
 
+    const existing = localLogs.value.find((l) => l.nisn === data.student.nisn);
+
+    const checkIn = data.attendance?.check_in_time
+        ? data.attendance.check_in_time.substring(0, 8)
+        : existing?.check_in_time;
+
+    const checkOut = data.attendance?.check_out_time
+        ? data.attendance.check_out_time.substring(0, 8)
+        : existing?.check_out_time;
+
     const newLogItem: LogItem = {
-        id: data.attendance?.id || Date.now(),
+        id: data.attendance?.id || existing?.id || Date.now(),
         student_name: data.student.name,
         nisn: data.student.nisn,
         class_name: data.student.class_name,
         photo_url:
             data.attendance?.photo_url ||
             data.student.photo_url ||
+            existing?.photo_url ||
             data.student.photo_path,
-        check_in_time: data.attendance?.check_in_time
-            ? data.attendance.check_in_time.substring(0, 8)
-            : undefined,
-        check_out_time: data.attendance?.check_out_time
-            ? data.attendance.check_out_time.substring(0, 8)
-            : undefined,
-        status: (data.attendance?.status || 'hadir').toLowerCase(),
+        check_in_time: checkIn,
+        check_out_time: checkOut,
+        status: (
+            data.attendance?.status ||
+            existing?.status ||
+            'hadir'
+        ).toLowerCase(),
     };
 
-    const existingIndex = localLogs.value.findIndex(
-        (l) => l.nisn === data.student.nisn,
-    );
-
-    if (existingIndex !== -1) {
-        localLogs.value[existingIndex] = {
-            ...localLogs.value[existingIndex],
-            ...newLogItem,
-            check_in_time:
-                newLogItem.check_in_time ||
-                localLogs.value[existingIndex].check_in_time,
-            check_out_time:
-                newLogItem.check_out_time ||
-                localLogs.value[existingIndex].check_out_time,
-        };
-    } else {
-        localLogs.value.unshift(newLogItem);
-    }
+    // Filter out existing record and unshift to index 0 (top of the list instantly)
+    localLogs.value = [
+        newLogItem,
+        ...localLogs.value.filter((l) => l.nisn !== data.student.nisn),
+    ];
 };
 
 const videoRef = ref<HTMLVideoElement | null>(null);
