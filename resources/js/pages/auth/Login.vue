@@ -29,23 +29,44 @@ const rfidStatusMessage = ref<string>('');
 const isRfidProcessing = ref<boolean>(false);
 
 let currentAudio: HTMLAudioElement | null = null;
-const speakGreeting = (text: string) => {
-    try {
-        if (currentAudio) {
-            currentAudio.pause();
-            currentAudio.currentTime = 0;
-            currentAudio = null;
+
+const playTtsAndWait = (text: string): Promise<void> => {
+    return new Promise((resolve) => {
+        try {
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+                currentAudio = null;
+            }
+
+            const encodedText = encodeURIComponent(text);
+            const audioUrl = `/absensi/tts-audio?text=${encodedText}`;
+
+            const audio = new Audio(audioUrl);
+            currentAudio = audio;
+            audio.volume = 1.0;
+
+            let finished = false;
+            const finish = () => {
+                if (!finished) {
+                    finished = true;
+                    resolve();
+                }
+            };
+
+            audio.addEventListener('ended', finish);
+            audio.addEventListener('error', finish);
+
+            // Safety fallback timeout in case audio is blocked or fails
+            setTimeout(finish, 3500);
+
+            audio.play().catch(() => {
+                finish();
+            });
+        } catch {
+            resolve();
         }
-
-        const encodedText = encodeURIComponent(text);
-        const audioUrl = `/absensi/tts-audio?text=${encodedText}`;
-
-        const audio = new Audio(audioUrl);
-        currentAudio = audio;
-        audio.volume = 1.0;
-
-        audio.play().catch(() => {});
-    } catch {}
+    });
 };
 
 // RFID Reader HID Global Buffer Listener
@@ -115,16 +136,16 @@ const processRfidLogin = async (rfidUid: string) => {
 
         if (response.ok && data.success) {
             rfidStatusMessage.value = `Login Berhasil! Selamat datang, ${data.user.name}.`;
-            speakGreeting(`Login berhasil. Selamat datang, ${data.user.name}.`);
-            setTimeout(() => {
-                window.location.href = data.redirect || '/dashboard';
-            }, 800);
+            await playTtsAndWait(
+                `Login berhasil. Selamat datang, ${data.user.name}.`,
+            );
+            window.location.href = data.redirect || '/dashboard';
         } else {
             const errorMsg =
                 data.message ||
                 `Kartu (${rfidUid}) belum terdaftar pada akun manapun.`;
             rfidStatusMessage.value = errorMsg;
-            speakGreeting('Kartu belum terdaftar pada akun guru.');
+            playTtsAndWait('Kartu belum terdaftar pada akun guru.');
         }
     } catch (err) {
         console.error('RFID Login Error:', err);
