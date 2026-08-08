@@ -1890,33 +1890,42 @@ onUnmounted(() => {
                 </button>
 
                 <!-- Header Badge -->
-                <div class="flex items-center gap-3">
-                    <div
-                        :class="[
-                            'flex h-10 w-10 items-center justify-center rounded-2xl shadow-lg',
-                            rfidStudentPopup.success
-                                ? 'bg-indigo-600 shadow-indigo-500/30'
-                                : 'bg-rose-600 shadow-rose-500/30',
-                        ]"
-                    >
-                        <Cpu class="h-5 w-5 text-amber-300" />
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div
+                            :class="[
+                                'flex h-10 w-10 items-center justify-center rounded-2xl shadow-lg',
+                                rfidStudentPopup.success
+                                    ? 'bg-indigo-600 shadow-indigo-500/30'
+                                    : 'bg-rose-600 shadow-rose-500/30',
+                            ]"
+                        >
+                            <Cpu class="h-5 w-5 text-amber-300" />
+                        </div>
+                        <div>
+                            <span
+                                v-if="rfidStudentPopup.success"
+                                class="inline-block rounded-full border border-emerald-500/30 bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-emerald-300 uppercase"
+                            >
+                                PRESENSI TAP KARTU RFID BERHASIL
+                            </span>
+                            <span
+                                v-else
+                                class="inline-block rounded-full border border-rose-500/30 bg-rose-500/20 px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-rose-300 uppercase"
+                            >
+                                PERINGATAN ABSENSI RFID
+                            </span>
+                            <h3 class="text-lg font-black text-white">
+                                KARTU TANDA PENGENAL SISWA
+                            </h3>
+                        </div>
                     </div>
-                    <div>
-                        <span
-                            v-if="rfidStudentPopup.success"
-                            class="inline-block rounded-full border border-emerald-500/30 bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-emerald-300 uppercase"
-                        >
-                            PRESENSI TAP KARTU RFID BERHASIL
-                        </span>
-                        <span
-                            v-else
-                            class="inline-block rounded-full border border-rose-500/30 bg-rose-500/20 px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-rose-300 uppercase"
-                        >
-                            PERINGATAN ABSENSI RFID
-                        </span>
-                        <h3 class="text-lg font-black text-white">
-                            KARTU TANDA PENGENAL SISWA
-                        </h3>
+
+                    <!-- Clean UID Badge in Top Right -->
+                    <div
+                        class="hidden rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-1 font-mono text-xs font-bold text-amber-400 sm:block"
+                    >
+                        UID: {{ rfidStudentPopup.rfid_uid }}
                     </div>
                 </div>
 
@@ -2025,21 +2034,16 @@ onUnmounted(() => {
                     </p>
                 </div>
 
-                <!-- Attendance Notification Banner -->
+                <!-- Clean Notification Banner (Message Only) -->
                 <div
                     :class="[
-                        'flex items-center justify-between rounded-xl border p-3.5 text-xs font-semibold',
+                        'rounded-xl border p-4 text-xs leading-relaxed font-bold',
                         rfidStudentPopup.success
                             ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
                             : 'border-rose-500/30 bg-rose-500/10 text-rose-300',
                     ]"
                 >
-                    <span class="leading-snug">{{
-                        rfidStudentPopup.message
-                    }}</span>
-                    <span class="shrink-0 font-mono font-bold text-amber-400"
-                        >UID: {{ rfidStudentPopup.rfid_uid }}</span
-                    >
+                    {{ rfidStudentPopup.message }}
                 </div>
             </div>
         </div>
