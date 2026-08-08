@@ -12,6 +12,7 @@ Route::get('/absensi', [AttendanceController::class, 'index'])->name('absensi.in
 Route::post('/absensi/verifikasi', [AttendanceController::class, 'verify'])->name('absensi.verify');
 Route::post('/absensi/verifikasi-otomatis', [AttendanceController::class, 'autoVerify'])->name('absensi.auto_verify');
 Route::post('/absensi/bypass-satpam', [AttendanceController::class, 'bypassSatpam'])->name('absensi.bypass_satpam');
+Route::get('/absensi/tts-audio', [AttendanceController::class, 'ttsAudio'])->name('absensi.tts_audio');
 
 // Authenticated Dashboard & Management Routes
 Route::middleware(['auth', 'verified'])->group(function () {

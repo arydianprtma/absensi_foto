@@ -274,23 +274,16 @@ const speakGreeting = (text: string) => {
             currentAudio = null;
         }
 
-        // Use Google Neural Indonesian Voice API
+        // Use Laravel Proxy for Google Neural Indonesian Voice (100% same voice on Chrome, Edge, Safari, Firefox)
         const encodedText = encodeURIComponent(text);
-        const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodedText}&tl=id&client=tw-ob`;
+        const audioUrl = `/absensi/tts-audio?text=${encodedText}`;
 
         const audio = new Audio(audioUrl);
         currentAudio = audio;
         audio.volume = 1.0;
 
-        audio.play().catch(() => {
-            // Fallback to Web Speech API if audio play policy blocked
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'id-ID';
-                utterance.rate = 0.95;
-                window.speechSynthesis.speak(utterance);
-            }
+        audio.play().catch((err) => {
+            console.warn('TTS playback issue:', err);
         });
     } catch {
         // audio playback fallback

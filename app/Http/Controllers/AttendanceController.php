@@ -9,6 +9,7 @@ use App\Services\InsightFaceService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -560,5 +561,36 @@ class AttendanceController extends Controller
                 'class_name' => $student->class_name,
             ],
         ]);
+    }
+
+    /**
+     * Google TTS Proxy Stream for consistent voice across all browsers (Chrome, Edge, Safari, Firefox).
+     */
+    public function ttsAudio(Request $request)
+    {
+        $text = $request->query('text', '');
+        if (empty($text)) {
+            return response('', 400);
+        }
+
+        $encodedText = urlencode($text);
+        $url = "https://translate.google.com/translate_tts?ie=UTF-8&q={$encodedText}&tl=id&client=tw-ob";
+
+        try {
+            $response = Http::withHeaders([
+                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            ])->get($url);
+
+            if ($response->successful()) {
+                return response($response->body(), 200, [
+                    'Content-Type' => 'audio/mpeg',
+                    'Cache-Control' => 'public, max-age=86400',
+                ]);
+            }
+        } catch (\Exception $e) {
+            // log exception
+        }
+
+        return response('', 500);
     }
 }
