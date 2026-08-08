@@ -33,18 +33,18 @@ const { isCurrentUrl } = useCurrentUrl();
                     class="group relative flex cursor-pointer items-center gap-3 rounded-2xl px-3.5 py-2.5 text-xs font-semibold transition-all duration-150"
                     :class="[
                         isCurrentUrl(item.href)
-                            ? 'bg-indigo-600 font-bold text-white shadow-md shadow-indigo-600/25 dark:bg-indigo-600 dark:text-white'
-                            : 'text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 dark:text-slate-300 dark:hover:bg-indigo-950/50 dark:hover:text-indigo-300',
+                            ? '!bg-indigo-600 font-bold !text-white shadow-md shadow-indigo-600/30 data-[active=true]:!bg-indigo-600 data-[active=true]:!text-white'
+                            : 'text-slate-700 hover:!bg-indigo-50 hover:!text-indigo-700 dark:text-slate-300 dark:hover:!bg-indigo-950/60 dark:hover:!text-indigo-300',
                     ]"
                 >
                     <Link :href="item.href">
                         <component
                             :is="item.icon"
-                            class="h-4 shrink-0 transition-all duration-150 group-hover:scale-110"
+                            class="h-4 w-4 shrink-0 transition-all duration-150 group-hover:scale-110"
                             :class="[
                                 isCurrentUrl(item.href)
-                                    ? 'text-white'
-                                    : 'text-slate-500 group-hover:text-indigo-600 dark:text-slate-400 dark:group-hover:text-indigo-400',
+                                    ? '!text-white'
+                                    : '!text-indigo-600 group-hover:!text-indigo-700 dark:!text-indigo-400 dark:group-hover:!text-indigo-300',
                             ]"
                         />
                         <span class="truncate">{{ item.title }}</span>
