@@ -71,25 +71,11 @@ const localLogs = ref<LogItem[]>([...(props.todayLogs || [])]);
 watch(
     () => props.todayLogs,
     (newLogs) => {
-        if (!newLogs || !Array.isArray(newLogs)) return;
-
-        if (localLogs.value.length === 0) {
+        if (newLogs && Array.isArray(newLogs)) {
             localLogs.value = [...newLogs];
-            return;
         }
-
-        const localNisns = new Set(localLogs.value.map((l) => l.nisn));
-        const missingFromLocal = newLogs.filter((l) => !localNisns.has(l.nisn));
-        const serverMap = new Map(newLogs.map((l) => [l.nisn, l]));
-
-        const updatedLocal = localLogs.value.map((localItem) => {
-            const serverItem = serverMap.get(localItem.nisn);
-            return serverItem ? { ...serverItem, ...localItem } : localItem;
-        });
-
-        localLogs.value = [...updatedLocal, ...missingFromLocal];
     },
-    { deep: true },
+    { deep: true, immediate: true },
 );
 
 const pushOrUpdateLocalLog = (data: any) => {
@@ -1278,9 +1264,13 @@ const processRfidScan = async (rfidUid: string) => {
             playTtsAudio(data.message);
         }
 
-        if (data.success) {
+        if (data.student) {
             pushOrUpdateLocalLog(data);
-            router.reload({ only: ['todayLogs'] });
+            router.reload({
+                only: ['todayLogs'],
+                preserveState: true,
+                preserveScroll: true,
+            });
         }
 
         setTimeout(() => {
