@@ -155,11 +155,23 @@ const captureSnapshot = (): string | null => {
     return canvas.toDataURL('image/jpeg', 0.9);
 };
 
+let currentMapelAudio: HTMLAudioElement | null = null;
+
 const speakGreeting = (text: string) => {
     try {
+        if (currentMapelAudio) {
+            currentMapelAudio.pause();
+            currentMapelAudio.currentTime = 0;
+            currentMapelAudio = null;
+        }
+
         const encodedText = encodeURIComponent(text);
         const audioUrl = `/absensi/tts-audio?text=${encodedText}`;
+
         const audio = new Audio(audioUrl);
+        currentMapelAudio = audio;
+        audio.volume = 1.0;
+
         audio.play().catch(() => {});
     } catch {}
 };
@@ -237,6 +249,8 @@ const setStatusManual = (studentId: number, statusValue: string) => {
 // RFID Reader HID Global Buffer Listener
 let rfidKeyBuffer = '';
 let rfidKeyTimeout: any = null;
+let lastScannedMapelRfidUid = '';
+let lastScannedMapelRfidTime = 0;
 
 const handleRfidKeyPress = (e: KeyboardEvent) => {
     const activeEl = document.activeElement;
@@ -269,6 +283,18 @@ const handleRfidKeyPress = (e: KeyboardEvent) => {
 };
 
 const processRfidMapelScan = (rfidUid: string) => {
+    const now = Date.now();
+    // Ignore duplicate rapid scans of the exact same RFID card within 3 seconds
+    if (
+        rfidUid === lastScannedMapelRfidUid &&
+        now - lastScannedMapelRfidTime < 3000
+    ) {
+        return;
+    }
+
+    lastScannedMapelRfidUid = rfidUid;
+    lastScannedMapelRfidTime = now;
+
     const matchedStudent = props.students.find(
         (s: any) => s.rfid_uid === rfidUid,
     );
