@@ -42,6 +42,10 @@ class ScheduleController extends Controller
      */
     public function storeSubject(Request $request): RedirectResponse
     {
+        if ($request->user() && $request->user()->role === 'teacher') {
+            return back()->with('error', 'Hanya Admin / Staff TU yang dapat mengelola mata pelajaran.');
+        }
+
         $validated = $request->validate([
             'code' => ['required', 'string', 'max:20', 'unique:subjects,code'],
             'name' => ['required', 'string', 'max:100'],
@@ -55,8 +59,12 @@ class ScheduleController extends Controller
     /**
      * Delete Subject.
      */
-    public function destroySubject(Subject $subject): RedirectResponse
+    public function destroySubject(Request $request, Subject $subject): RedirectResponse
     {
+        if ($request->user() && $request->user()->role === 'teacher') {
+            return back()->with('error', 'Hanya Admin / Staff TU yang dapat mengelola mata pelajaran.');
+        }
+
         $subject->delete();
 
         return back()->with('success', 'Mata pelajaran berhasil dihapus.');
@@ -67,6 +75,10 @@ class ScheduleController extends Controller
      */
     public function storeSchedule(Request $request): RedirectResponse
     {
+        if ($request->user() && $request->user()->role === 'teacher') {
+            return back()->with('error', 'Hanya Admin / Staff TU yang dapat mengelola jadwal pelajaran.');
+        }
+
         $validated = $request->validate([
             'class_name' => ['required', 'string', 'max:50'],
             'subject_id' => ['required', 'exists:subjects,id'],
@@ -84,8 +96,12 @@ class ScheduleController extends Controller
     /**
      * Delete Schedule.
      */
-    public function destroySchedule(Schedule $schedule): RedirectResponse
+    public function destroySchedule(Request $request, Schedule $schedule): RedirectResponse
     {
+        if ($request->user() && $request->user()->role === 'teacher') {
+            return back()->with('error', 'Hanya Admin / Staff TU yang dapat mengelola jadwal pelajaran.');
+        }
+
         $schedule->delete();
 
         return back()->with('success', 'Jadwal pelajaran berhasil dihapus.');

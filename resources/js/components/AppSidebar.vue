@@ -13,7 +13,7 @@ import {
 } from '@lucide/vue';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
-import NavMain from '@/components/NavMain.vue';
+import NavMain, { type NavGroup } from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 import {
     Sidebar,
@@ -24,68 +24,108 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import type { NavItem } from '@/types';
 
 const page = usePage();
 const userRole = computed(
     () => (page.props.auth as any)?.user?.role || 'admin',
 );
 
-const allNavItems: NavItem[] = [
+const adminNavGroups: NavGroup[] = [
     {
-        title: 'Kamera Absensi AI',
-        href: '/absensi',
-        icon: Camera,
+        title: 'Dashboard & Absensi',
+        items: [
+            {
+                title: 'Dashboard Analitik',
+                href: '/dashboard',
+                icon: LayoutGrid,
+            },
+            {
+                title: 'Kamera Absensi AI Gerbang',
+                href: '/absensi',
+                icon: Camera,
+            },
+            {
+                title: 'Absensi Mapel Kelas',
+                href: '/absensi-mapel',
+                icon: BookOpen,
+            },
+        ],
     },
     {
-        title: 'Absensi Mapel Kelas',
-        href: '/absensi-mapel',
-        icon: BookOpen,
+        title: 'Manajemen Data',
+        items: [
+            {
+                title: 'Data Siswa & Wajah',
+                href: '/students',
+                icon: Users,
+            },
+            {
+                title: 'Kelola Akun Guru',
+                href: '/teachers',
+                icon: UserCheck,
+            },
+            {
+                title: 'Jadwal Pelajaran',
+                href: '/schedules',
+                icon: Bookmark,
+            },
+        ],
     },
     {
-        title: 'Dashboard Analitik',
-        href: '/dashboard',
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Data Siswa & Wajah',
-        href: '/students',
-        icon: Users,
-    },
-    {
-        title: 'Kelola Akun Guru',
-        href: '/teachers',
-        icon: UserCheck,
-    },
-    {
-        title: 'Jadwal Pelajaran',
-        href: '/schedules',
-        icon: Bookmark,
-    },
-    {
-        title: 'Kelola Jam Absensi',
-        href: '/attendance-settings',
-        icon: Clock,
-    },
-    {
-        title: 'Kalender Hari Libur',
-        href: '/holidays',
-        icon: Calendar,
-    },
-    {
-        title: 'Laporan Absensi',
-        href: '/reports',
-        icon: FileText,
+        title: 'Pengaturan & Laporan',
+        items: [
+            {
+                title: 'Kelola Jam Absensi',
+                href: '/attendance-settings',
+                icon: Clock,
+            },
+            {
+                title: 'Kalender Hari Libur',
+                href: '/holidays',
+                icon: Calendar,
+            },
+            {
+                title: 'Laporan Absensi',
+                href: '/reports',
+                icon: FileText,
+            },
+        ],
     },
 ];
 
-const navItems = computed(() => {
+const teacherNavGroups: NavGroup[] = [
+    {
+        title: 'Utama',
+        items: [
+            {
+                title: 'Dashboard Guru',
+                href: '/dashboard',
+                icon: LayoutGrid,
+            },
+            {
+                title: 'Absensi Mapel Kelas',
+                href: '/absensi-mapel',
+                icon: BookOpen,
+            },
+        ],
+    },
+    {
+        title: 'Akademik',
+        items: [
+            {
+                title: 'Jadwal Pelajaran',
+                href: '/schedules',
+                icon: Bookmark,
+            },
+        ],
+    },
+];
+
+const navGroups = computed(() => {
     if (userRole.value === 'teacher') {
-        return allNavItems.filter((item) =>
-            ['/absensi', '/absensi-mapel', '/schedules'].includes(item.href),
-        );
+        return teacherNavGroups;
     }
-    return allNavItems;
+    return adminNavGroups;
 });
 </script>
 
@@ -108,7 +148,7 @@ const navItems = computed(() => {
         </SidebarHeader>
 
         <SidebarContent class="py-2">
-            <NavMain :items="navItems" />
+            <NavMain :groups="navGroups" />
         </SidebarContent>
 
         <SidebarFooter class="border-t border-sidebar-border pt-2">

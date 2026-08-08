@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Attendance;
 use App\Models\AttendanceSetting;
+use App\Models\Schedule;
 use App\Models\Student;
 use App\Services\InsightFaceService;
 use Carbon\Carbon;
@@ -23,8 +24,12 @@ class AttendanceController extends Controller
     /**
      * Public / Student Webcam Attendance Page.
      */
-    public function index(): Response
+    public function index(Request $request)
     {
+        if ($request->user() && $request->user()->role === 'teacher') {
+            return redirect()->route('dashboard');
+        }
+
         $students = Student::select('id', 'nisn', 'name', 'class_name', 'photo_path')
             ->whereNotNull('face_embedding')
             ->orderBy('name')
@@ -321,9 +326,33 @@ class AttendanceController extends Controller
     /**
      * Dashboard Overview & Statistics with Weekly Trends.
      */
-    public function dashboard(): Response
+    public function dashboard(Request $request): Response
     {
-        $today = Carbon::now('Asia/Jakarta')->format('Y-m-d');
+        $user = $request->user();
+        $now = Carbon::now('Asia/Jakarta');
+        $today = $now->format('Y-m-d');
+        $currentDayEnglish = $now->format('l');
+
+        if ($user && $user->role === 'teacher') {
+            $schedules = Schedule::with('subject')
+                ->where(function ($query) use ($currentDayEnglish) {
+                    $query->where('day_of_week', $currentDayEnglish)
+                        ->orWhere('day_of_week', $this->mapDayToIndonesian($currentDayEnglish));
+                })
+                ->get();
+
+            return Inertia::render('Dashboard/TeacherDashboard', [
+                'user' => [
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                    'nip' => $user->nip,
+                ],
+                'schedules' => $schedules,
+                'todayDate' => $now->format('d M Y'),
+                'todayDayName' => $this->mapDayToIndonesian($currentDayEnglish),
+            ]);
+        }
 
         $totalStudents = Student::count();
         $registeredFacesCount = Student::whereNotNull('face_embedding')->count();
@@ -594,5 +623,22 @@ class AttendanceController extends Controller
         }
 
         return response('', 500);
+    }
+
+    /**
+     * Map English day name to Indonesian day name.
+     */
+    private function mapDayToIndonesian(string $dayEnglish): string
+    {
+        return match (strtolower($dayEnglish)) {
+            'monday' => 'Senin',
+            'tuesday' => 'Selasa',
+            'wednesday' => 'Rabu',
+            'thursday' => 'Kamis',
+            'friday' => 'Jumat',
+            'saturday' => 'Sabtu',
+            'sunday' => 'Minggu',
+            default => $dayEnglish,
+        };
     }
 }

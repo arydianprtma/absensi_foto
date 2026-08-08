@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, usePage } from '@inertiajs/vue3';
 import {
     Bookmark,
     BookOpen,
@@ -9,8 +9,14 @@ import {
     TriangleAlert,
     X,
 } from '@lucide/vue';
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
+
+const page = usePage();
+const userRole = computed(
+    () => (page.props.auth as any)?.user?.role || 'admin',
+);
+const isAdmin = computed(() => userRole.value === 'admin');
 
 interface SubjectItem {
     id: number;
@@ -197,6 +203,19 @@ const executeDelete = () => {
                 </div>
             </div>
 
+            <!-- Info Banner for Teacher (Read-Only) -->
+            <div
+                v-if="!isAdmin"
+                class="mb-6 flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs font-semibold text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300"
+            >
+                <Bookmark class="h-5 w-5 shrink-0 text-amber-600" />
+                <span>
+                    Mode Read-Only: Guru dapat melihat jadwal pelajaran sekolah.
+                    Pengelolaan jadwal dan mata pelajaran khusus dilakukan oleh
+                    Administrator / Staff TU.
+                </span>
+            </div>
+
             <!-- TAB 1: SCHEDULES MANAGEMENT -->
             <div
                 v-if="activeTab === 'schedules'"
@@ -204,6 +223,7 @@ const executeDelete = () => {
             >
                 <!-- Add Schedule Form -->
                 <div
+                    v-if="isAdmin"
                     class="h-fit space-y-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
                 >
                     <h2
@@ -400,7 +420,10 @@ const executeDelete = () => {
 
                 <!-- Schedules List Table -->
                 <div
-                    class="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2 dark:border-slate-800 dark:bg-slate-900"
+                    :class="[
+                        'space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900',
+                        isAdmin ? 'lg:col-span-2' : 'lg:col-span-3',
+                    ]"
                 >
                     <div
                         class="flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-800"
@@ -448,6 +471,7 @@ const executeDelete = () => {
                                         Hari & Waktu (WIB)
                                     </th>
                                     <th
+                                        v-if="isAdmin"
                                         class="border-b border-slate-200 px-4 py-3.5 text-right dark:border-slate-800"
                                     >
                                         Aksi
@@ -489,6 +513,7 @@ const executeDelete = () => {
                                         {{ sch.end_time.slice(0, 5) }} WIB
                                     </td>
                                     <td
+                                        v-if="isAdmin"
                                         class="border-b border-slate-100 px-4 py-3 text-right dark:border-slate-800/60"
                                     >
                                         <button
@@ -508,7 +533,7 @@ const executeDelete = () => {
 
                                 <tr v-if="schedules.length === 0">
                                     <td
-                                        colspan="5"
+                                        :colspan="isAdmin ? 5 : 4"
                                         class="py-12 text-center text-sm text-slate-400"
                                     >
                                         Belum ada jadwal pelajaran yang
@@ -525,6 +550,7 @@ const executeDelete = () => {
             <div v-else class="grid grid-cols-1 gap-8 lg:grid-cols-3">
                 <!-- Add Subject Form -->
                 <div
+                    v-if="isAdmin"
                     class="h-fit space-y-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
                 >
                     <h2
@@ -579,7 +605,10 @@ const executeDelete = () => {
 
                 <!-- Subjects List Table -->
                 <div
-                    class="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2 dark:border-slate-800 dark:bg-slate-900"
+                    :class="[
+                        'space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900',
+                        isAdmin ? 'lg:col-span-2' : 'lg:col-span-3',
+                    ]"
                 >
                     <div
                         class="flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-800"
@@ -617,6 +646,7 @@ const executeDelete = () => {
                                         Nama Mata Pelajaran
                                     </th>
                                     <th
+                                        v-if="isAdmin"
                                         class="border-b border-slate-200 px-4 py-3.5 text-right dark:border-slate-800"
                                     >
                                         Aksi
@@ -642,6 +672,7 @@ const executeDelete = () => {
                                         {{ sub.name }}
                                     </td>
                                     <td
+                                        v-if="isAdmin"
                                         class="border-b border-slate-100 px-4 py-3 text-right dark:border-slate-800/60"
                                     >
                                         <button
